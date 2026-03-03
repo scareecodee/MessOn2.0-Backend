@@ -15,9 +15,13 @@ class Settings(BaseSettings):
     access_token_expire_days: int
     refresh_token_expire_days: int
     google_client_id:str
-    breakfast_expire:int
-    lunch_expire:int
-    dinner_expire:int
+    breakfast_expire:str
+    lunch_expire:str
+    dinner_expire:str
+    coupon_secret_key:str
+    max_notifications:int
+    max_csv_file_size:int
+    csv_upload_timelimit:int
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -3,18 +3,16 @@ from sqlalchemy.orm import Session
 from app.security.googleOauth import verify_google_token
 
 from app.db.session import get_db
-from app.schemas.authSchema import (
+from app.schemas.student.authSchema import (
     GoogleLoginRequest,
     LoginResponse,
     UserResponse
 )
-from app.models.studentModel import Student
-from app.security import googleOauth
+from app.models.student.studentModel import Student
 from app.security.jwt import access
-from app.security.firebase import verify_firebase_token
 
 router = APIRouter(
-    tags = ['Google Login']
+    tags = ['Student Login']
 )
 
 ALLOWED_DOMAIN = "@iiit-bh.ac.in"
@@ -35,7 +33,7 @@ def login_with_google(
 
     # print(data)
     payload = verify_google_token(data.id_token)
-    print(payload)
+    # print(payload)
 
 
     if not payload:
@@ -92,24 +90,27 @@ def login_with_google(
         )
 
     # Update profile 
-    print(name)
-    print(picture)
+    # print(name)
+    # print(picture)
+    # print(google_sub)
     student.name = name
     student.picture = picture
 
-
-    # db.refresh()
+    db.add(student)
     db.commit()
+    db.refresh(student)
 
     access_token, expires_at = access.create_access_token(
         {"sub": str(student.id)}
     )
+    print(access_token)
 
     return LoginResponse(
         access_token=access_token,
         token_type="bearer",
         expires_at=expires_at,
         user=UserResponse(
+            id=student.id,
             email=student.email,
             name=student.name,
             picture=student.picture

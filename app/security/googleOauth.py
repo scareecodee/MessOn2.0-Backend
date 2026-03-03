@@ -34,5 +34,8 @@ def verify_google_token(token: str):
             GOOGLE_CLIENT_ID
         )
         return payload
-    except Exception:
-        return None
+    except Exception as e:
+       print("Google token verification failed:", str(e))
+       return None
+
+    return None
