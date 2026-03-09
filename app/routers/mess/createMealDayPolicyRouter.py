@@ -8,33 +8,40 @@ from app.security.dependencies.getCurrentRole import get_current_role
 from app.utils.userRole import UserRole
 from app.utils.menuWeek import MenuWeek
 from app.schemas.mess.createDayPolicy import CreateDayPolicy
+from app.schemas.mess.dayPolicyResponse import DayPolicyResponse
 from app.models.mess.mealDayPolicy import MessDayPolicy
+from app.models.mess.messAdmin import MessAdmin
 
 router = APIRouter(
     prefix="/messes",
     tags=["Mess Admin"]
 )
 
-
-@router.post("/{mess_id}/day-policy/{menu_week}")
+@router.patch(
+    "/day-policy/{menu_week}",
+    response_model=List[DayPolicyResponse]
+)
 def upsert_day_policy(
-    mess_id: UUID,
     menu_week: MenuWeek,
     payload: List[CreateDayPolicy],
-    current_admin: User = Depends(get_current_role(UserRole.mess_admin)),
+    current_user: User = Depends(get_current_role([UserRole.mess_admin])),
     db: Session = Depends(get_db),
 ):
 
+    mess_admin = db.query(MessAdmin).filter(
+        MessAdmin.user_id == current_user.id,
+        MessAdmin.college_id == current_user.college_id
+    ).first()
+
     existing = db.query(MessDayPolicy).filter(
-        MessDayPolicy.college_id == current_admin.college_id,
-        MessDayPolicy.mess_id == mess_id,
+        MessDayPolicy.college_id == current_user.college_id,
+        MessDayPolicy.mess_id == mess_admin.mess_id,
         MessDayPolicy.menu_week == menu_week
     ).all()
 
-    existing_map = {
-        policy.day: policy
-        for policy in existing
-    }
+    existing_map = {policy.day: policy for policy in existing}
+
+    result = []
 
     for item in payload:
 
@@ -42,21 +49,21 @@ def upsert_day_policy(
 
         if existing_policy:
             existing_policy.is_compulsory = item.is_compulsory
+            policy = existing_policy
 
         else:
-            new_policy = MessDayPolicy(
-                mess_id=mess_id,
-                college_id=current_admin.college_id,
+            policy = MessDayPolicy(
+                mess_id=mess_admin.mess_id,
+                college_id=current_user.college_id,
                 day=item.day,
                 menu_week=menu_week,
                 is_compulsory=item.is_compulsory
             )
+            db.add(policy)
+            db.flush()
 
-            db.add(new_policy)
+        result.append(policy)
 
     db.commit()
 
-    return HTTPException(
-        status_code=status.HTTP_201_CREATED,
-        detail="Mess Day Policy created successfully",
-    )
+    return result

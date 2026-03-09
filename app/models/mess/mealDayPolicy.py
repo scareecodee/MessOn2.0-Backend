@@ -3,13 +3,18 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.utils.weekDay import WeekDay
 from app.utils.menuWeek import MenuWeek
+import uuid
 
 from app.db.base import Base
 
 class MessDayPolicy(Base):
     __tablename__ = "mess_day_policies"
 
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4
+    )
 
     college_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -19,7 +24,7 @@ class MessDayPolicy(Base):
 
     mess_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("messes.id", ondelete="CASCADE"),
+        ForeignKey("mess.id", ondelete="CASCADE"),
         index=True
     )
 

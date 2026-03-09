@@ -14,26 +14,34 @@ from app.utils.userRole import UserRole
 from app.models.mess.messMenuModel import Menu
 from app.utils.menuWeek import MenuWeek
 from app.utils.weekDay import WeekDay
+from app.models.mess.messModel import Mess
 
 router = APIRouter(
     prefix="/messes",
     tags=["Mess Admin"]
 )
 
-@router.patch("/{mess_id}/menus/{menu_week}", response_model=List[MenuResponse])
+@router.patch("/menus/{menu_week}", response_model=List[MenuResponse])
 def upsert_menus(
-    mess_id: UUID,
     menu_week: MenuWeek,
     payload: List[CreateMenu],
-    current_admin: User = Depends(get_current_role(UserRole.mess_admin)),
+    current_user: User = Depends(get_current_role([UserRole.mess_admin])),
     db: Session = Depends(get_db),
 ):
 
+    # print(payload)
+
+
+    mess_admin = db.query(MessAdmin).filter(
+        MessAdmin.user_id==current_user.id,
+        MessAdmin.college_id == current_user.college_id
+    ).first()
+
     mess = (
-        db.query(MessAdmin)
+        db.query(Mess)
         .filter(
-            MessAdmin.mess_id == mess_id,
-            MessAdmin.college_id == current_admin.college_id
+            Mess.id == mess_admin.mess_id,
+            Mess.college_id == current_user.college_id
         )
         .first()
     )
@@ -46,8 +54,8 @@ def upsert_menus(
 
     # -------- SINGLE QUERY --------
     existing_menus = db.query(Menu).filter(
-        Menu.mess_id == mess_id,
-        Menu.college_id == current_admin.college_id,
+        Menu.mess_id == mess_admin.mess_id,
+        Menu.college_id == current_user.college_id,
         Menu.menu_week == menu_week
     ).all()
 
@@ -80,8 +88,8 @@ def upsert_menus(
         else:
             # INSERT
             menu_obj = Menu(
-                mess_id=mess_id,
-                college_id=current_admin.college_id,
+                mess_id=mess_admin.mess_id,
+                college_id=current_user.college_id,
                 day=item.day,
                 meal_slot=item.meal_slot,
                 meal_type=item.meal_type,
@@ -94,12 +102,12 @@ def upsert_menus(
 
         result.append(
             MenuResponse(
-                menu_id=UUID(str(menu_obj.id)),
+                # menu_id=UUID(str(menu_obj.id)),
                 day=WeekDay(menu_obj.day),
                 meal_slot=MealSlot(menu_obj.meal_slot),
                 meal_type=menu_obj.meal_type,
                 dishes=menu_obj.dishes,
-                menu_week=menu_week
+                # menu_week=menu_week
             )
         )
 

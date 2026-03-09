@@ -6,13 +6,9 @@ from app.utils.menuWeek import MenuWeek
 from app.utils.weekDay import WeekDay
 
 
-class MenuUpdate(BaseModel):
-    menu_dishes: str
-    is_available: bool
-
 
 class MenuResponse(BaseModel):
-    menu_id: UUID
+    # menu_id: UUID
     day: WeekDay
     meal_slot: MealSlot
     meal_type: MealType
@@ -22,7 +18,20 @@ class MenuResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class DayWiseMenuResponse(BaseModel):
-    breakfast: dict[str, MenuResponse] = Field(default_factory=dict)
-    lunch: dict[str, MenuResponse] = Field(default_factory=dict)
-    dinner: dict[str, MenuResponse] = Field(default_factory=dict)
+class SlotMenu(BaseModel):
+    veg: MenuResponse | None = None
+    nonVeg: MenuResponse | None = None
+
+class DayMenu(BaseModel):
+    breakfast: SlotMenu = SlotMenu()
+    lunch: SlotMenu = SlotMenu()
+    dinner: SlotMenu = SlotMenu()
+
+class WeeklyMenuResponse(BaseModel):
+    monday: DayMenu = DayMenu()
+    tuesday: DayMenu = DayMenu()
+    wednesday: DayMenu = DayMenu()
+    thursday: DayMenu = DayMenu()
+    friday: DayMenu = DayMenu()
+    saturday: DayMenu = DayMenu()
+    sunday: DayMenu = DayMenu()

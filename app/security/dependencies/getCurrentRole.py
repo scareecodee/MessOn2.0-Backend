@@ -4,9 +4,11 @@ from app.models.user.userModel import User
 from app.security.dependencies.getCurrentUser import get_current_user
 
 
-def get_current_role(role: UserRole):
+def get_current_role(allowed_roles: list[UserRole]):
+
     def role_check(current_user: User = Depends(get_current_user)):
-        if current_user.role != role:
+
+        if current_user.role not in allowed_roles:
             raise HTTPException(403, "Access denied")
         return current_user
     return role_check

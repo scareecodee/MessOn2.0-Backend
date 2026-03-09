@@ -11,10 +11,10 @@ from app.routers.collegeAdmin import (
 )
 
 from app.routers.mess import (
-     createMessMenuRouter
+     createMessMenuRouter,createMealDayPolicyRouter,fetchMealDayPolicyRouter
 )
 from app.routers.student import (
-     fetchMenuRouter
+     fetchMenuRouter,
 
 )
 
@@ -73,6 +73,8 @@ app.include_router(fetchStudents.router)
 app.include_router(createStudentsManually.router)
 app.include_router(createMessMenuRouter.router)
 app.include_router(fetchMenuRouter.router)
+app.include_router(createMealDayPolicyRouter.router)
+app.include_router(fetchMealDayPolicyRouter.router)
 
 
 
