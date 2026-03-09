@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from app.utils.mealSlot import MealSlot
 from app.utils.mealType import MealType
 from typing import List
-from app.utils.weekDays import WeekDays
+from app.utils.weekDay import WeekDays
 
 class MealPreferenceItem(BaseModel):
     day: WeekDays

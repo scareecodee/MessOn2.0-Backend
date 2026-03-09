@@ -1,14 +1,29 @@
 import uuid
-from sqlalchemy import DateTime,Column, String, Integer, Boolean, DateTime, UUID,JSON
+from datetime import datetime
+
+from sqlalchemy import DateTime, JSON
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
-from sqlalchemy.sql import func
+
 
 class StudentImportSession(Base):
     __tablename__ = "student_import_sessions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    admin_id = Column(UUID(as_uuid=True), nullable=True)
-    to_insert = Column(JSON, nullable=False)
-    to_update = Column(JSON, nullable=False)
-    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4
+    )
 
+    admin_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
+    to_insert: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+    to_update: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        index=True
+    )

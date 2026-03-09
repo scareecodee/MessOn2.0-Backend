@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     max_notifications:int
     max_csv_file_size:int
     csv_upload_timelimit:int
+    cursor_secret:str
 
     model_config = SettingsConfigDict(
         env_file=".env",

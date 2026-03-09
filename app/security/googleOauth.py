@@ -1,7 +1,7 @@
 # from jose import JWTError,jwt
 # from datetime import datetime,timedelta
 from app.core.config import get_settings
-# from app.schemas import auth
+# from app.schemas import user
 # from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends
 
@@ -15,25 +15,18 @@ GOOGLE_CLIENT_ID=settings.google_client_id
 
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl = 'login')
 
-
-# def get_current_user(token: str = Depends(oauth2_scheme)):
-#     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-#                                           detail=f"Could not your validate credentials", 
-#                                           headers = {"WWW- Authenticate": "Bearer"})
-    
-
-    
-    # return verify_access_token(token,credentials_exception)
-
-
 def verify_google_token(token: str):
+
+    # print("inside verify_google_token")
     try:
         payload = id_token.verify_oauth2_token(
             token,
             requests.Request(),
             GOOGLE_CLIENT_ID
         )
+        # print("returning payload")
         return payload
+
     except Exception as e:
        print("Google token verification failed:", str(e))
        return None

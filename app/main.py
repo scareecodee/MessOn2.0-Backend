@@ -2,14 +2,24 @@ from fastapi import FastAPI, Depends
 from app.db.session import get_db
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-from app.db.init_db import init_db
+from app.db.models import init_db
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers.student import fetchCouponRouter, studentLoginRouter, messMenuFetchRouter, studentComplaintRouter, \
-    notificationRouter
-from app.routers.mess import messAdminDashboardRouter, messAdminLoginRouter, messAdminScanRouter, messMenuCreationRouter
-from app.routers.superAdmin import adminCsvImport,addStudentsManually,studentActivation
 
-from app.core.backgroundScheduler import start_scheduler
+from app.routers.collegeAdmin import (
+    fetchCollegeDetails,createMess,fetchAllMess,createMessAdmin,
+    fetchMessAdmins,bulkStudentsImport,fetchStudents,createStudentsManually
+)
+
+from app.routers.mess import (
+     createMessMenuRouter
+)
+from app.routers.student import (
+     fetchMenuRouter
+
+)
+
+from app.routers.student import userLoginRouter
+# from app.core.backgroundScheduler import start_scheduler
 
 from datetime import datetime, timezone,date
 from zoneinfo import ZoneInfo
@@ -41,30 +51,30 @@ init_db()   # <-- runs table creation
 def health_check(db:Session = Depends(get_db)):
     return {"message": "Hellow World",}
 
-@app.get("/startup")
-def startup():
-    print("SERVER INSTANCE ID:", id(app))
-    pass
+# @app.get("/startup")
+# def startup():
+#     print("SERVER INSTANCE ID:", id(app))
+#     pass
+#
+#
+# @app.on_event("startup")
+# def startup_event():
+#     start_scheduler()
 
 
-@app.on_event("startup")
-def startup_event():
-    start_scheduler()
+app.include_router(fetchCollegeDetails.router)
+app.include_router(userLoginRouter.router)
+app.include_router(createMess.router)
+app.include_router(fetchAllMess.router)
+app.include_router(createMessAdmin.router)
+app.include_router(fetchMessAdmins.router)
+app.include_router(bulkStudentsImport.router)
+app.include_router(fetchStudents.router)
+app.include_router(createStudentsManually.router)
+app.include_router(createMessMenuRouter.router)
+app.include_router(fetchMenuRouter.router)
 
 
-app.include_router(adminCsvImport.router)
-app.include_router(studentLoginRouter.router)
-app.include_router(fetchCouponRouter.router)
-app.include_router(messAdminScanRouter.router)
-app.include_router(messAdminLoginRouter.router)
-# app.include_router(messMenuCreationRouter.router)
-# app.include_router(messAdminCreationRouter.router)
-app.include_router(messMenuFetchRouter.router)
-app.include_router(notificationRouter.router)
-app.include_router(studentComplaintRouter.router)
-app.include_router(messAdminDashboardRouter.router)
-app.include_router(addStudentsManually.router)
-app.include_router(studentActivation.router)
 
 
 
