@@ -7,7 +7,6 @@ REQUIRED_HEADERS = {"name", "roll_number", "email", "branch", "batch", "is_activ
 def parse_and_preview_csv(csv_content: str, existing_emails: set, mode: str):
     reader = csv.DictReader(io.StringIO(csv_content))
 
-    # ---------------- HEADER VALIDATION ----------------
     if not reader.fieldnames:
         return {
             "status": False,
@@ -49,7 +48,6 @@ def parse_and_preview_csv(csv_content: str, existing_emails: set, mode: str):
             "conflicts": []
         }
 
-    # ---------------- INITIALIZE ----------------
     to_insert = []
     to_update = []
     errors = []
@@ -58,7 +56,6 @@ def parse_and_preview_csv(csv_content: str, existing_emails: set, mode: str):
     seen_emails = set()
     seen_roll_numbers = set()
 
-    # ---------------- ROW PROCESSING ----------------
     for row_number, row in enumerate(reader, start=2):
         row_errors = []
 
@@ -69,7 +66,6 @@ def parse_and_preview_csv(csv_content: str, existing_emails: set, mode: str):
         batch_raw = row["batch"].strip()
         is_active_raw = row["is_active"].strip().lower()
 
-        # ---------- BASIC VALIDATION ----------
         if not name:
             row_errors.append("name is required")
         if not roll_number:
@@ -98,7 +94,6 @@ def parse_and_preview_csv(csv_content: str, existing_emails: set, mode: str):
                 })
             continue
 
-        # ---------- CONFLICT CHECKS ----------
         conflict_messages = []
 
         # Duplicate email inside CSV
@@ -124,7 +119,6 @@ def parse_and_preview_csv(csv_content: str, existing_emails: set, mode: str):
                 })
             continue
 
-        # ---------- SAFE TO PROCESS ----------
         seen_emails.add(email)
         seen_roll_numbers.add(roll_number)
 
@@ -142,7 +136,6 @@ def parse_and_preview_csv(csv_content: str, existing_emails: set, mode: str):
         else:
             to_update.append(student_data)
 
-    # ---------------- FINAL RESULT ----------------
     if errors or conflicts:
         return {
             "status": False,

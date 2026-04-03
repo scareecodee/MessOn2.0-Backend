@@ -1,26 +1,48 @@
 import uuid
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+
+from sqlalchemy import String, Integer, ForeignKey, UniqueConstraint, DateTime, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.models.user.userModel import User
+
 from app.db.base import Base
 
 
 class Student(Base):
     __tablename__ = "students"
 
-    id = Column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        unique=True,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+
+    college_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("colleges.id", ondelete="CASCADE"),
         nullable=False
     )
-    name = Column(String, nullable=False)
-    roll_number = Column(String, unique=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    branch = Column(String, nullable=False)
-    batch=Column(Integer, nullable=False)
-    hasReadNotifications = Column(Boolean, nullable=False, default=False)
-    # is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    google_sub = Column(String, unique=True, index=True, nullable=True)
-    picture = Column(String, nullable=True)
+
+    mess_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),
+        ForeignKey("mess.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    roll_number: Mapped[str] = mapped_column(String,unique=True,nullable=False )
+
+    branch: Mapped[str] = mapped_column(String, nullable=False)
+
+    batch: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    user: Mapped["User"] = relationship(back_populates="student", lazy="selectin")
+    __table_args__ = (
+        UniqueConstraint("user_id", name="unique_student_per_mess"),
+    )

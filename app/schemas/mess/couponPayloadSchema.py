@@ -1,17 +1,26 @@
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import date,datetime
+from datetime import date,datetime,time
+from app.utils.mealSlot import MealSlot
+from app.utils.mealType import MealType
+from app.db.enums import meal_slot_enum,meal_type_enum
 
 
 class CouponPayload(BaseModel):
-    couponId: str
-    userId: str
+    coupon_id: UUID
+    student_id: UUID
+    mess_id: UUID
+    college_id: UUID
     date: date
-    mealSlot:str
-    mealType:str
-    expiresAt: int = Field(..., description="UTC epoch seconds")
-    usedAt: Optional[int] = Field(None, description="UTC epoch seconds")
+    meal_slot: MealSlot
+    meal_type: MealType
+    scanned_at: datetime | None
     signature: str
+
+    class Config:
+        from_attributes = True
 
 class QrResponseSchema(BaseModel):
     valid:bool

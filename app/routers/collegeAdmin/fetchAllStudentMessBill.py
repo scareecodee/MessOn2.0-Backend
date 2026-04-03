@@ -1,0 +1,66 @@
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from uuid import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.session import get_db
+from app.models.college.collegeAdmin import CollegeAdmin
+from app.models.mess.messAdmin import MessAdmin
+from app.models.user.userModel import User
+from app.schemas.collegeAdmin.messBillConfigSchema import BillRequest
+from app.security.dependencies.getCurrentRole import get_current_role
+from app.services.messBillService import calculate_mess_bill
+from app.utils.userRole import UserRole
+from app.models.mess.messWeekModel import MessWeek
+
+router = APIRouter(prefix="/mess", tags=["Mess Bill"])
+
+@router.post("/{mess_id}/bill")
+async def generate_mess_bill(
+    payload: BillRequest,
+    mess_id: UUID,
+    current_user: User = Depends(get_current_role([UserRole.college_admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(CollegeAdmin).filter(
+            CollegeAdmin.id == current_user.id,
+            CollegeAdmin.college_id == current_user.college_id
+        )
+    )
+    college_admin = result.scalar_one_or_none()
+
+    if not college_admin:
+        raise HTTPException(404, "Admin admin not found")
+
+    mess_weeks = await db.execute(
+        select(MessWeek).filter(
+            MessWeek.college_id == current_user.college_id,
+            MessWeek.mess_id == mess_id
+        ).order_by(MessWeek.start_date.asc()).limit(1)
+    )
+
+    mess_week  = mess_weeks.scalar_one_or_none()
+
+    if not mess_week:
+        raise HTTPException(404, "Mess week not found")
+
+    print(mess_week.start_date)
+
+    all_students_bill = await calculate_mess_bill(
+        db=db,
+        mess_id=mess_id,
+        college_id=current_user.college_id,
+        range_type=payload.range_type,
+        n_days=payload.n_days,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        mess_start_date=mess_week.start_date
+    )
+
+    return {
+        "total_students": len(data),
+        "all_students_bill": all_students_bill
+    }

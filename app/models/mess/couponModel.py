@@ -1,65 +1,86 @@
 import uuid
-from sqlalchemy import Column, String, Date, Enum, DateTime, ForeignKey,UniqueConstraint,Boolean,BigInteger
-from app.db.base import Base
-from datetime import date as DateType
+from datetime import datetime, date as DateType
+from sqlalchemy import Date, DateTime, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.utils.mealType import MealType
+from app.db.base import Base
+from app.db.enums import meal_slot_enum, meal_type_enum
 from app.utils.mealSlot import MealSlot
+from app.utils.mealType import MealType
 
 
 class Coupon(Base):
     __tablename__ = "coupons"
 
-    __table_args__ = (
-        UniqueConstraint(
-            "userId",
-            "date",
-            "mealSlot",
-            name="uq_user_day_meal",
-        ),
-    )
-
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid.uuid4
     )
 
-    userId: Mapped[uuid.UUID] = mapped_column(
+    student_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("students.id"),
+        ForeignKey("students.user_id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
+        index=True
+    )
+
+    college_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("colleges.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    mess_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("mess.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    week_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("mess_weeks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
     )
 
     date: Mapped[DateType] = mapped_column(
         Date,
         nullable=False,
-        index=True,
+        index=True
     )
 
-    mealSlot:Mapped[MealSlot]=mapped_column(
-        Enum(MealSlot),
+    meal_slot: Mapped[MealSlot] = mapped_column(
+        meal_slot_enum,
         nullable=False,
-        index=True,
+        index=True
     )
 
-    mealType: Mapped[MealType] = mapped_column(
-        Enum(MealType),
-        nullable=False,
-        index=True,       
+    meal_type: Mapped[MealType] = mapped_column(
+        meal_type_enum,
+        nullable=False
     )
 
-    expiresAt: Mapped[int] = mapped_column(
-        BigInteger,
-        nullable=False,
-    )
-
-    usedAt: Mapped[int | None] = mapped_column(
-        BigInteger,
+    scanned_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
-        index=True,          
+        index=True
     )
 
+    scanned_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "student_id", "date", "meal_slot",
+            name="uq_student_date_meal_slot"
+        ),
+
+        Index("ix_coupon_student_date", "student_id", "date"),
+        Index("ix_coupon_mess_date", "mess_id", "date"),
+    )

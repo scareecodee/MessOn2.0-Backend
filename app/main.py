@@ -1,19 +1,29 @@
 from fastapi import FastAPI, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from dotenv import load_dotenv
-from sqlalchemy.orm import Session
-from app.db.init_db import init_db
+from app.tasks.cronJobs import start_scheduler
+from app.db.models import init_db
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers.student import fetchCouponRouter, studentLoginRouter, messMenuFetchRouter, studentComplaintRouter, \
-    notificationRouter
-from app.routers.mess import messAdminDashboardRouter, messAdminLoginRouter, messAdminScanRouter, messMenuCreationRouter
-from app.routers.superAdmin import adminCsvImport,addStudentsManually,studentActivation
 
-from app.core.backgroundScheduler import start_scheduler
+from app.routers.collegeAdmin import (
+    fetchCollegeDetails,createMess,fetchAllMess,createMessAdmin,
+    fetchMessAdmins,bulkStudentsImport,fetchStudents,createStudentsManually,studentActivation,
+    updateStudentDetails,createMessBill,fetchAllStudentMessBill
+)
 
-from datetime import datetime, timezone,date
-from zoneinfo import ZoneInfo
+from app.routers.mess import (
+    createMessMenuRouter, createMealDayPolicyRouter, fetchMealDayPolicyRouter, fetchSubmissionWindowRouter,
+    createMealSlotExpiryRouter, generateMessWeekRouter, createSubmissionWindowRouter,
+    generateCouponsManually, scanCouponRouter, submissionWindowTemplateRouter, fetchMealSlotExpiryRouter,
+    createMessClosureRouter, updateMessClosureRouter, fetchMessClosureRouter,
+    fetchMealPreferenceAnalytics, scannedCouponAnalyticsRouter
+)
+from app.routers.student import (
+     fetchMenuRouter,mealAvailabilityRouter,fetchMealPreferenceRouter,userLoginRouter,submitMealPrefernceRouter,
+     fetchCouponRouter
 
+)
 
 load_dotenv()
 
@@ -27,44 +37,65 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-init_db()   # <-- runs table creation
-
-
-
-# print("UTC now:", datetime.now(timezone.utc))
-# print("IST now:", datetime.now(ZoneInfo("Asia/Kolkata")))
-# print("date.today():", date.today())
-
-
-@app.get("/")
-def health_check(db:Session = Depends(get_db)):
-    return {"message": "Hellow World",}
-
-@app.get("/startup")
-def startup():
-    print("SERVER INSTANCE ID:", id(app))
-    pass
+@app.on_event("startup")
+async def startup():
+    await init_db()
 
 
 @app.on_event("startup")
-def startup_event():
+async def startup():
     start_scheduler()
+@app.get("/db-test")
+async def db_test(db: AsyncSession = Depends(get_db)):
+    return {"status": "connected"}
+
+# @app.get("/startup")
+# def startup():
+#     print("SERVER INSTANCE ID:", id(app))
+#     pass
+#
+#
+# @app.on_event("startup")
+# def startup_event():
 
 
-app.include_router(adminCsvImport.router)
-app.include_router(studentLoginRouter.router)
+app.include_router(fetchCollegeDetails.router)
+app.include_router(userLoginRouter.router)
+app.include_router(createMess.router)
+app.include_router(fetchAllMess.router)
+app.include_router(createMessAdmin.router)
+app.include_router(fetchMessAdmins.router)
+app.include_router(bulkStudentsImport.router)
+app.include_router(fetchStudents.router)
+app.include_router(createStudentsManually.router)
+app.include_router(createMessMenuRouter.router)
+app.include_router(fetchMenuRouter.router)
+app.include_router(createMealDayPolicyRouter.router)
+app.include_router(fetchMealDayPolicyRouter.router)
+app.include_router(mealAvailabilityRouter.router)
+app.include_router(fetchMealPreferenceRouter.router)
+app.include_router(submitMealPrefernceRouter.router)
+app.include_router(fetchSubmissionWindowRouter.router)
+app.include_router(createMealSlotExpiryRouter.router)
+
+app.include_router(generateMessWeekRouter.router)
+
+app.include_router(createSubmissionWindowRouter.router)
 app.include_router(fetchCouponRouter.router)
-app.include_router(messAdminScanRouter.router)
-app.include_router(messAdminLoginRouter.router)
-# app.include_router(messMenuCreationRouter.router)
-# app.include_router(messAdminCreationRouter.router)
-app.include_router(messMenuFetchRouter.router)
-app.include_router(notificationRouter.router)
-app.include_router(studentComplaintRouter.router)
-app.include_router(messAdminDashboardRouter.router)
-app.include_router(addStudentsManually.router)
+app.include_router(generateCouponsManually.router)
+app.include_router(scanCouponRouter.router)
+app.include_router(submissionWindowTemplateRouter.router)
+app.include_router(fetchMealSlotExpiryRouter.router)
+app.include_router(createMessClosureRouter.router)
+app.include_router(updateMessClosureRouter.router)
+app.include_router(fetchMessClosureRouter.router)
 app.include_router(studentActivation.router)
+app.include_router(scannedCouponAnalyticsRouter.router)
+app.include_router(updateStudentDetails.router)
+app.include_router(fetchMealPreferenceAnalytics.router)
+app.include_router(createMessBill.router)
+app.include_router(fetchAllStudentMessBill.router)
+
 
 
 

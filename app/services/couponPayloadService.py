@@ -1,34 +1,46 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
-
-from app.schemas.mess.couponPayloadSchema import CouponPayload
+from uuid import UUID
+from zoneinfo import ZoneInfo
 from app.security.couponSignature import sign_payload
-from app.models.mess.couponModel import MealType
 from app.utils.mealSlot import MealSlot
+from app.utils.mealType import MealType
+from app.schemas.mess.couponPayloadSchema import CouponPayload
+from app.models.mess.couponModel import Coupon
+from app.utils.computeCouponExpiry import compute_expiry
+from app.utils.unsignedCouponPayload import build_unsigned_from_coupon
 
+IST = ZoneInfo("Asia/Kolkata")
 
-def build_coupon_payload(
+async def build_coupon_payload(
+    db,
     *,
-    couponId: str,
-    userId: str,
-    couponDate: date,
-    mealType: MealType,
-    expiresAt: int,
-    usedAt: Optional[int],
-    mealSlot:MealSlot
+    coupon,
 ) -> CouponPayload:
-    
+    expires_at = await compute_expiry(
+        db=db,
+        mess_id=coupon.mess_id,
+        meal_slot=coupon.meal_slot,
+        coupon_date=coupon.date
+    )
+    #
+    # unsigned = (
+    #     f"{coupon.id}|{coupon.student_id}|{coupon.mess_id}|{coupon.college_id}|{coupon.date}"
+    #     f"|{coupon.meal_type.value}||{coupon.meal_slot.value}"
+    # )
 
-    unsigned = f"{couponId}|{userId}|{couponDate}|{mealType.value}|{expiresAt}|{mealSlot.value}"
+    unsigned = build_unsigned_from_coupon(coupon)
+
     signature = sign_payload(unsigned)
 
     return CouponPayload(
-        couponId=couponId,
-        userId=userId,
-        date=couponDate,
-        mealSlot=mealSlot.value,
-        mealType=mealType.value,
-        expiresAt=expiresAt,
-        usedAt=usedAt,
-        signature=signature,
+        coupon_id=coupon.id,
+        student_id=coupon.student_id,
+        mess_id=coupon.mess_id,
+        college_id=coupon.college_id,
+        date=coupon.date,
+        meal_slot=coupon.meal_slot.value,
+        meal_type=coupon.meal_type.value,
+        scanned_at= None,
+        signature=signature
     )

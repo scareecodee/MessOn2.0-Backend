@@ -3,6 +3,7 @@ import hmac
 import hashlib
 import base64
 from app.core.config import get_settings
+from app.utils.unsignedCouponPayload import build_unsigned_from_payload
 
 settings=get_settings()
 
@@ -17,12 +18,13 @@ def sign_payload(data: str) -> str:
         hashlib.sha256
     ).digest()
 
-    return base64.urlsafe_b64encode(signature).decode()
+    return  base64.urlsafe_b64encode(signature).decode()
 
-def verify_payload_signature(payload) -> str : 
-
-    unsigned = f"{payload.coupon_id}|{payload.user_id}|{payload.date}|{payload.meal}|{payload.expires_at}"
-
+def verify_payload_signature(payload):
+    unsigned = build_unsigned_from_payload(payload)
     expected_signature = sign_payload(unsigned)
-    # return hmac.compare_digest(expected_signature, payload.signature)
-    return expected_signature
+    #
+    # print("expected_signature", expected_signature)
+    # print("payload signature",payload.signature)
+
+    return hmac.compare_digest(expected_signature, payload.signature)

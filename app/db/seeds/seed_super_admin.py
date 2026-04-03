@@ -1,7 +1,6 @@
 import uuid
 from sqlalchemy.orm import Session
-from app.models.superAdmin.superAdminModel import SuperAdmin
-from app.security.hash_pwd import get_password_hash  # your bcrypt function
+from utils.hash_pwd import get_password_hash  # your bcrypt function
 
 
 def seed_super_admins(db: Session):
