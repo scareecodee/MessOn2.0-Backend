@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends,HTTPException,status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, tuple_, or_, cast, String
+from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
-from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.student.studentModel import Student
 from app.models.user.userModel import User
@@ -18,16 +18,19 @@ router = APIRouter(
 )
 
 @router.get("/fetch-students/{mess_id}", response_model=StudentListResponse)
-def get_students(
-    mess_id:UUID,
-    current_admin:User=Depends(get_current_role(UserRole.college_admin)),
+async def get_students(
+    mess_id: UUID,
+    current_admin: User = Depends(get_current_role(UserRole.college_admin)),
     params: StudentFilterParams = Depends(),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    mess = db.query(Mess).filter(
-        Mess.id == mess_id,
-        Mess.college_id == current_admin.college_id
-    ).first()
+    result = await db.execute(
+        select(Mess).filter(
+            Mess.id == mess_id,
+            Mess.college_id == current_admin.college_id
+        )
+    )
+    mess = result.scalar_one_or_none()
 
     if not mess:
         raise HTTPException(
@@ -44,7 +47,6 @@ def get_students(
         )
     )
 
-    # # ---------------- BATCH CHIP FILTER ----------------
     # if params.batch:
     #     query = query.where(Student.batch == params.batch)
 
@@ -62,7 +64,6 @@ def get_students(
             )
         )
 
-    # ----------G------ ORDER ----------------
     query = query.order_by(
         Student.roll_number.asc(),
         User.created_at.desc(),
@@ -80,10 +81,11 @@ def get_students(
 
     query = query.limit(params.limit + 1)
 
-    result = db.execute(query).scalars().all()
+    result = await db.execute(query)
+    students_result = result.scalars().all()
 
-    has_more = len(result) > params.limit
-    students = result[:params.limit]
+    has_more = len(students_result) > params.limit
+    students = students_result[:params.limit]
 
     next_cursor = None
 
@@ -98,7 +100,7 @@ def get_students(
     return {
         "students_list": [
             {
-                "student_uuid":s.user.id,
+                "student_uuid": s.user.id,
                 "name": s.user.name,
                 "roll_number": s.roll_number,
                 "email": s.user.email,
@@ -107,9 +109,7 @@ def get_students(
                 "is_active": s.user.is_active,
                 "picture": s.user.picture,
             }
-
             for s in students
-
         ],
         "next_cursor": next_cursor
     }

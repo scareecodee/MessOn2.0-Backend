@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status,responses
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status, responses
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from typing import List
 from app.db.session import get_db
 from app.models.user.userModel import User
@@ -9,26 +10,30 @@ from app.utils.menuWeek import MenuWeek
 from app.models.mess.mealDayPolicy import MessDayPolicy
 from app.models.mess.messAdmin import MessAdmin
 from app.schemas.mess.dayPolicyResponse import DayPolicyResponse
+from app.services.weekResolverService import resolve_week
+from app.models.mess.messWeekModel import MessWeek
 
 router = APIRouter(
     prefix="/fetch/messes",
-    tags=["Mess Admin"]
+    tags=["Manage Mess Day Policy"]
 )
 
 @router.get(
     "/day-policy/{menu_week}",
     response_model=List[DayPolicyResponse]
 )
-def get_day_policy(
+async def get_day_policy(
     menu_week: MenuWeek,
     current_user: User = Depends(get_current_role([UserRole.mess_admin])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-
-    mess_admin = db.query(MessAdmin).filter(
-        MessAdmin.user_id == current_user.id,
-        MessAdmin.college_id == current_user.college_id
-    ).first()
+    result = await db.execute(
+        select(MessAdmin).filter(
+            MessAdmin.user_id == current_user.id,
+            MessAdmin.college_id == current_user.college_id,
+        )
+    )
+    mess_admin = result.scalar_one_or_none()
 
     if not mess_admin:
         raise HTTPException(
@@ -36,10 +41,39 @@ def get_day_policy(
             detail="Mess admin not assigned to any mess"
         )
 
-    policies = db.query(MessDayPolicy).filter(
-        MessDayPolicy.college_id == current_user.college_id,
-        MessDayPolicy.mess_id == mess_admin.mess_id,
-        MessDayPolicy.menu_week == menu_week
-    ).order_by(MessDayPolicy.day).all()
+    week = await resolve_week(
+        db,
+        menu_week,
+        mess_admin.mess_id,
+        current_user.college_id
+    )
+
+    target_date = week.start_date   # 🔥 KEY (same as menu)
+
+    effective_week_subq = (
+        select(MessWeek.id)
+        .join(MessDayPolicy, MessDayPolicy.week_id == MessWeek.id)
+        .where(
+            MessDayPolicy.college_id == current_user.college_id,
+            MessDayPolicy.mess_id == mess_admin.mess_id,
+            MessWeek.start_date <= target_date
+        )
+        .order_by(MessWeek.start_date.desc())
+        .limit(1)
+        .scalar_subquery()
+    )
+
+    result = await db.execute(
+        select(MessDayPolicy).filter(
+            MessDayPolicy.college_id == current_user.college_id,
+            MessDayPolicy.mess_id == mess_admin.mess_id,
+            MessDayPolicy.week_id == effective_week_subq
+        ).order_by(MessDayPolicy.day)
+    )
+
+    policies = result.scalars().all()
+
+    if not policies:
+        raise HTTPException(status_code=404, detail="No day policy found")
 
     return policies

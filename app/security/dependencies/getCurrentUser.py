@@ -1,22 +1,23 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.models.user.userModel import User
 from app.security.jwt.getTokenPayload import get_token_payload
 from app.db.session import get_db
 
 
-def get_current_user(
+async def get_current_user(
     payload: dict = Depends(get_token_payload),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-
     user_id = payload["sub"]
     college_id = payload["college_id"]
 
-    user = db.query(User).filter(
-        User.id == user_id
-    ).first()
+    result = await db.execute(
+        select(User).filter(User.id == user_id)
+    )
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(
@@ -30,7 +31,7 @@ def get_current_user(
             detail="User inactive"
         )
 
-    if str(user.college_id) != college_id:
+    if str(user.college_id) != str(college_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid college access"

@@ -1,6 +1,6 @@
 import enum
 
-class WeekDay(enum.Enum):
+class WeekDays(enum.Enum):
     monday = "monday"
     tuesday = "tuesday"
     wednesday = "wednesday"

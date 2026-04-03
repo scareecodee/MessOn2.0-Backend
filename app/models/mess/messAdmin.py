@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,6 +27,10 @@ class MessAdmin(Base):
         ForeignKey("mess.id", ondelete="CASCADE"),
         nullable=False,
         index=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", name="unique_admin_per_mess"),
     )
 
     # user: Mapped["User"] = relationship(back_populates="mess_admin")

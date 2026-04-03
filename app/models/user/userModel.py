@@ -62,7 +62,8 @@ class User(Base):
     student = relationship(
         "Student",
         back_populates="user",
-        uselist=False
+        uselist=False,
+        lazy="selectin"
     )
 
     # college: Mapped["College"] = relationship(back_populates="users")

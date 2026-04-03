@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status,Response
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.models.user.userModel import User
 from app.security.dependencies.getCurrentRole import get_current_role
 from app.db.session import get_db
@@ -11,23 +12,26 @@ router = APIRouter(
     prefix="/delete",
     tags=["Mess Admin Management"]
 )
+
 @router.delete("/mess/{mess_id}")
-def delete_mess(
+async def delete_mess(
     mess_id: UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_role(UserRole.college_admin))
 ):
-
-    mess = db.query(Mess).filter(
-        Mess.id == mess_id,
-        Mess.college_id == current_user.college_id
-    ).first()
+    result = await db.execute(
+        select(Mess).filter(
+            Mess.id == mess_id,
+            Mess.college_id == current_user.college_id
+        )
+    )
+    mess = result.scalar_one_or_none()
 
     if not mess:
         raise HTTPException(404, "Mess not found")
 
-    db.delete(mess)
-    db.commit()
+    await db.delete(mess)
+    await db.commit()
 
     return Response(
         status_code=status.HTTP_204_NO_CONTENT,

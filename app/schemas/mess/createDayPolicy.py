@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from app.utils.weekDay import WeekDay
+from app.utils.weekDays import WeekDays
 
 class CreateDayPolicy(BaseModel):
-    day: WeekDay
+    day: WeekDays
     is_compulsory: bool=True

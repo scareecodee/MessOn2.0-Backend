@@ -1,7 +1,7 @@
 from sqlalchemy import Enum, Integer, ForeignKey,UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from app.utils.weekDay import WeekDay
+from app.utils.weekDays import WeekDays
 from app.utils.menuWeek import MenuWeek
 import uuid
 
@@ -28,22 +28,29 @@ class MessDayPolicy(Base):
         index=True
     )
 
-    day: Mapped[WeekDay] = mapped_column(
-        Enum(WeekDay, name="weekday_enum"),
+    day: Mapped[WeekDays] = mapped_column(
+        Enum(WeekDays, name="weekday_enum"),
         nullable=False
     )
 
-    menu_week: Mapped[MenuWeek] = mapped_column(
-        Enum(MenuWeek, name="menu_week_enum"),
-        nullable=False
+    week_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("mess_weeks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
     )
+
+    # menu_week: Mapped[MenuWeek] = mapped_column(
+    #     Enum(MenuWeek, name="menu_week_enum"),
+    #     nullable=False
+    # )
 
     is_compulsory: Mapped[bool] = mapped_column(default=True,nullable=False)
 
     __table_args__ = (
         UniqueConstraint(
             "mess_id",
-            "menu_week",
+            "week_id",
             "day",
             name="unique_day_policy"
         ),

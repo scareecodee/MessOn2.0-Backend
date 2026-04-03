@@ -1,17 +1,18 @@
 from uuid import UUID
 import uuid
 from fastapi import Form
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException,status
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from typing import Literal
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.db.session import get_db
 from app.models.student.studentImportSession import StudentImportSession
 from app.services.students_csv_import import parse_and_preview_csv
-from app.schemas.collegeAdmin.studentImportSchema import ImportValidationError,ConfirmImportResponse,PreviewImportResponse
+from app.schemas.collegeAdmin.studentImportSchema import ImportValidationError, ConfirmImportResponse, PreviewImportResponse
 from app.security.dependencies.getCurrentRole import get_current_role
 from app.models.user.userModel import User
 from app.models.student.studentModel import Student
@@ -22,7 +23,7 @@ from app.core.config import get_settings
 
 settings = get_settings()
 MAX_CSV_FILE_SIZE = settings.max_csv_file_size
-CSV_UPLOAD_TIMELIMIT= settings.csv_upload_timelimit
+CSV_UPLOAD_TIMELIMIT = settings.csv_upload_timelimit
 
 
 router = APIRouter(
@@ -30,21 +31,23 @@ router = APIRouter(
     tags=["Student Import"])
 
 @router.post(
-             "/preview/{mess_id}",
-            response_model=PreviewImportResponse
-             )
-def preview_csv(
-    mess_id:UUID,
+    "/preview/{mess_id}",
+    response_model=PreviewImportResponse
+)
+async def preview_csv(
+    mess_id: UUID,
     mode: Literal["insert", "update"] = Form(...),
     file: UploadFile = File(...),
-    current_admin:User=Depends(get_current_role(UserRole.college_admin)),
-    db: Session = Depends(get_db)
-
+    current_admin: User = Depends(get_current_role([UserRole.college_admin])),
+    db: AsyncSession = Depends(get_db)
 ):
-    mess = db.query(Mess).filter(
-        Mess.id == mess_id,
-        Mess.college_id == current_admin.college_id
-    ).first()
+    result = await db.execute(
+        select(Mess).filter(
+            Mess.id == mess_id,
+            Mess.college_id == current_admin.college_id
+        )
+    )
+    mess = result.scalar_one_or_none()
 
     if not mess:
         raise HTTPException(
@@ -52,14 +55,13 @@ def preview_csv(
             detail="You cannot access this mess."
         )
 
-
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(
-           status_code=400,
-           detail="Only .csv files are allowed."
-    )
+            status_code=400,
+            detail="Only .csv files are allowed."
+        )
 
-    content = file.file.read()
+    content = await file.read()
     if len(content) > MAX_CSV_FILE_SIZE:
         raise HTTPException(
             status_code=400,
@@ -71,9 +73,8 @@ def preview_csv(
 
     csv_content = content.decode("utf-8")
 
-    existing_emails = {
-        email for (email,) in db.query(User.email).all()
-    }
+    result = await db.execute(select(User.email))
+    existing_emails = {email for (email,) in result.all()}
 
     preview = parse_and_preview_csv(csv_content, existing_emails, mode)
 
@@ -102,7 +103,6 @@ def preview_csv(
         )
     # expires_at = datetime.utcnow() + timedelta(minutes=CSV_UPLOAD_TIMELIMIT)
 
-
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=CSV_UPLOAD_TIMELIMIT)
 
     session = StudentImportSession(
@@ -113,8 +113,8 @@ def preview_csv(
     )
 
     db.add(session)
-    db.commit()
-    db.refresh(session)
+    await db.commit()
+    await db.refresh(session)
 
     expire_time_ist = session.expires_at.astimezone(
         ZoneInfo("Asia/Kolkata")
@@ -133,21 +133,22 @@ def preview_csv(
     )
 
 
-
 @router.post(
     "/confirm/{mess_id}",
     response_model=ConfirmImportResponse
 )
-def confirm_import(
+async def confirm_import(
     mess_id: UUID,
     import_token: uuid.UUID,
-    current_admin:User=Depends(get_current_role(UserRole.college_admin)),
-    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_role(UserRole.college_admin)),
+    db: AsyncSession = Depends(get_db),
 ):
-
-    session = db.query(StudentImportSession).filter(
-        StudentImportSession.id == import_token
-    ).first()
+    result = await db.execute(
+        select(StudentImportSession).filter(
+            StudentImportSession.id == import_token
+        )
+    )
+    session = result.scalar_one_or_none()
 
     # Token not found
     # print("Inside cnf")
@@ -155,10 +156,9 @@ def confirm_import(
         return ConfirmImportResponse(status=False)
 
     # Token expired → delete row
-
     if session.expires_at < datetime.now(timezone.utc):
-        db.delete(session)
-        db.commit()
+        await db.delete(session)
+        await db.commit()
         return ConfirmImportResponse(status=False)
     print("token verified")
 
@@ -167,16 +167,16 @@ def confirm_import(
         to_update = session.to_update or []
         # print("to inerrt",to_insert)
         # One-time use → delete staging row
-        db.delete(session)
+        await db.delete(session)
 
         emails = [row["email"] for row in to_insert]
 
-        existing_students = (
-            db.query(Student)
+        result = await db.execute(
+            select(Student)
             .join(User)
             .filter(User.email.in_(emails))
-            .all()
         )
+        existing_students = result.scalars().all()
 
         # print("inserting raw ")
 
@@ -199,7 +199,7 @@ def confirm_import(
                 )
 
                 db.add(user)
-                db.flush()  # get user.id
+                await db.flush()  # get user.id
 
                 student = Student(
                     user_id=user.id,
@@ -210,7 +210,6 @@ def confirm_import(
                     batch=int(str(row["batch"])),
                 )
 
-
                 db.add(student)
         print("before insert add")
 
@@ -218,12 +217,12 @@ def confirm_import(
 
             emails = [row["email"] for row in to_update]
 
-            existing_students = (
-                db.query(Student)
+            result = await db.execute(
+                select(Student)
                 .join(User)
                 .filter(User.email.in_(emails))
-                .all()
             )
+            existing_students = result.scalars().all()
 
             update_map = {row["email"]: row for row in to_update}
 
@@ -238,7 +237,7 @@ def confirm_import(
                     student.user.name = row["name"]
                     student.user.is_active = row["is_active"]
         print("one step away from commit")
-        db.commit()
+        await db.commit()
         return ConfirmImportResponse(status=True)
 
     # except (IntegrityError, SQLAlchemyError):
@@ -246,6 +245,6 @@ def confirm_import(
     #     return ConfirmImportResponse(status=False)
 
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         print("IMPORT ERROR:", repr(e))
         raise

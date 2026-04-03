@@ -3,13 +3,13 @@ from uuid import UUID
 from app.utils.mealSlot import MealSlot
 from app.utils.mealType import MealType
 from app.utils.menuWeek import MenuWeek
-from app.utils.weekDay import WeekDay
+from app.utils.weekDays import WeekDays
 
 
 
 class MenuResponse(BaseModel):
     # menu_id: UUID
-    day: WeekDay
+    day: WeekDays
     meal_slot: MealSlot
     meal_type: MealType
     dishes: str

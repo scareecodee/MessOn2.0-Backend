@@ -1,13 +1,15 @@
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.models.user.userSession import UserSession
 
 
-def verify_session(session_id: str, db: Session) -> type[UserSession]:
+async def verify_session(session_id: str, db: AsyncSession) -> UserSession:
 
-    session = db.query(UserSession).filter(
-        UserSession.id == session_id
-    ).first()
+    result = await db.execute(
+        select(UserSession).filter(UserSession.id == session_id)
+    )
+    session = result.scalar_one_or_none()
 
     if not session:
         raise HTTPException(

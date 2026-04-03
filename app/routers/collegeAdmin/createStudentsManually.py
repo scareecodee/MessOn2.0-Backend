@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException,status,Response
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from uuid import UUID
 from typing import List
 from app.db.session import get_db
@@ -18,61 +19,50 @@ router = APIRouter(
 )
 
 @router.post("/{mess_id}/students/manually", response_model=AddStudentManuallyResponse)
-def create_students(
+async def create_students(
     mess_id: UUID,
     payload: List[StudentCreate],
     response: Response,
     current_user: User = Depends(get_current_role(UserRole.college_admin)),
-    db: Session = Depends(get_db),
-
+    db: AsyncSession = Depends(get_db),
 ):
-
     conflicts: List[AddManuallyConflictResponse] = []
 
-    # -------- VERIFY MESS --------
-    mess = (
-        db.query(Mess)
-        .filter(
+    result = await db.execute(
+        select(Mess).filter(
             Mess.id == mess_id,
             Mess.college_id == current_user.college_id
         )
-        .first()
     )
+    mess = result.scalar_one_or_none()
 
     if not mess:
         raise HTTPException(404, "Mess not found")
 
-    # -------- GET COLLEGE DOMAIN --------
-    college = (
-        db.query(College)
-        .filter(College.id == current_user.college_id)
-        .first()
+    result = await db.execute(
+        select(College).filter(College.id == current_user.college_id)
     )
+    college = result.scalar_one_or_none()
 
     allowed_domain = str(college.domain)
-
-    users_to_create = []
-    students_to_create = []
 
     for student in payload:
 
         # -------- DOMAIN CHECK --------
-        if not student.email.endswith(allowed_domain):
-            conflicts.append(
-                AddManuallyConflictResponse(
-                    email=student.email,
-                    roll_number=student.roll_number,
-                    message=f"Email must end with {allowed_domain}"
-                )
-            )
-            continue
+        # if not student.email.endswith(allowed_domain):
+        #     conflicts.append(
+        #         AddManuallyConflictResponse(
+        #             email=student.email,
+        #             roll_number=student.roll_number,
+        #             message=f"Email must end with {allowed_domain}"
+        #         )
+        #     )
+        #     continue
 
-        # -------- EMAIL UNIQUE --------
-        existing_user = (
-            db.query(User)
-            .filter(User.email == student.email)
-            .first()
+        result = await db.execute(
+            select(User).filter(User.email == student.email)
         )
+        existing_user = result.scalar_one_or_none()
 
         if existing_user:
             conflicts.append(
@@ -84,15 +74,13 @@ def create_students(
             )
             continue
 
-        # -------- ROLL UNIQUE IN MESS --------
-        existing_roll = (
-            db.query(Student)
-            .filter(
+        result = await db.execute(
+            select(Student).filter(
                 Student.roll_number == student.roll_number,
                 Student.mess_id == mess_id
             )
-            .first()
         )
+        existing_roll = result.scalar_one_or_none()
 
         if existing_roll:
             conflicts.append(
@@ -104,8 +92,6 @@ def create_students(
             )
             continue
 
-
-        # -------- CREATE USER --------
         user = User(
             college_id=current_user.college_id,
             name=student.name,
@@ -115,9 +101,8 @@ def create_students(
         )
 
         db.add(user)
-        db.flush()
+        await db.flush()
 
-        # -------- CREATE STUDENT --------
         new_student = Student(
             user_id=user.id,
             college_id=current_user.college_id,
@@ -129,15 +114,13 @@ def create_students(
 
         db.add(new_student)
 
-    db.commit()
-
+    await db.commit()
 
     if conflicts:
-            return AddStudentManuallyResponse(
-                status=False,
-                conflicts=conflicts
-            )
-
+        return AddStudentManuallyResponse(
+            status=False,
+            conflicts=conflicts
+        )
 
     return AddStudentManuallyResponse(
         status=True,

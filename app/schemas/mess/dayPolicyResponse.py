@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-from app.utils.weekDay import WeekDay
+from app.utils.weekDays import WeekDays
 from app.utils.menuWeek import MenuWeek
 
 class DayPolicyResponse(BaseModel):
-    day: WeekDay
+    day: WeekDays
     is_compulsory: bool=True
     # menu_week: MenuWeek
 

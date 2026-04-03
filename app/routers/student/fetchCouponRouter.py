@@ -1,72 +1,51 @@
-# from fastapi import APIRouter, Depends, HTTPException, status
-# from sqlalchemy.orm import Session
-# import time
-# from app.db.session import get_db
-# from app.models.mess.couponModel import MealType
-# from app.models.student.studentModel import Student
-# from app.security.dependencies import get_current_user
-# from app.services.couponQueryService import fetch_coupon_by_meal
-# import app.security.dependencies as security_module
-# from app.utils.mealSlot import MealSlot
-#
-# router = APIRouter(
-#     prefix="/coupons",
-#      tags=["Fetch Meal-wise Coupons"],
-#          dependencies=[Depends(security_module.security)]
-#      )
-#
-#
-#
-# @router.get("/today/breakfast")
-# def get_breakfast_coupon(
-#     db: Session = Depends(get_db),
-#     current_user: Student = Depends(get_current_user),
-# ):
-#
-#     coupon = fetch_coupon_by_meal(db, current_user, MealSlot.breakfast)
-#     if not coupon:
-#         raise HTTPException(
-#          status_code=status.HTTP_404_NOT_FOUND,
-#          detail="Breakfast coupon not found",
-# )
-#     print(coupon)
-#     return coupon
-#
-#
-# @router.get("/today/lunch")
-# def get_lunch_coupon(
-#     db: Session = Depends(get_db),
-#     current_user: Student = Depends(get_current_user),
-# ):
-#     coupon = fetch_coupon_by_meal(db, current_user, MealSlot.lunch)
-#     if not coupon:
-#         raise HTTPException(
-#                              status_code=404,
-#                              detail="Lunch coupon not found",
-# )
-#     print(coupon)
-#     return coupon
-#
-#
-# @router.get("/today/dinner")
-# def get_dinner_coupon(
-#     db: Session = Depends(get_db),
-#     current_user: Student = Depends(get_current_user),
-# ):
-#     print(current_user.name)
-#     coupon = fetch_coupon_by_meal(db, current_user, MealSlot.dinner)
-#
-#
-#     now_epoch = int(time.time())
-#     if coupon and coupon.expiresAt < now_epoch:
-#         print("coupon found:", coupon)
-#
-#     if not coupon:
-#         raise HTTPException(
-#         status_code=404,
-#         detail="Dinner coupon not found",
-# )
-#
-#     print(coupon)
-#
-#     return coupon
+# app/api/routes/coupon.py
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.session import get_db
+from app.services.couponQueryService import fetch_coupon_by_meal
+from app.models.user.userModel import User
+from app.models.student.studentModel import Student
+from app.security.dependencies.getCurrentRole import get_current_role
+from app.utils.userRole import UserRole
+from app.utils.mealSlot import MealSlot
+from app.schemas.mess.couponPayloadSchema import CouponPayload
+from app.models.mess.couponModel import Coupon
+
+router = APIRouter(
+    prefix="/fetch",
+    tags=[" Fetch Coupons"]
+    )
+
+@router.get("/coupons/{meal_slot}",response_model=CouponPayload)
+async def get_coupon(
+    meal_slot: MealSlot,
+    current_user: User = Depends(get_current_role([UserRole.student])),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Student).filter(
+            Student.user_id == current_user.id,
+            Student.college_id == current_user.college_id,
+        )
+    )
+
+    student = result.scalar_one_or_none()
+
+    if not student:
+        raise HTTPException(404, "Student profile not found")
+
+    coupon = await fetch_coupon_by_meal(
+        db=db,
+        student_id=student.user_id,
+        mess_id=student.mess_id,
+        college_id=current_user.college_id,
+        meal_slot=meal_slot
+    )
+
+    if not coupon:
+        raise HTTPException(404, "Coupon not available")
+
+    return coupon

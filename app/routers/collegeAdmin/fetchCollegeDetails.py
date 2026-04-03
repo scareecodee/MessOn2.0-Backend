@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends,HTTPException,status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.db.session import get_db
 from app.models.college.collegeModel import College
 from typing import List
@@ -8,13 +9,12 @@ from app.schemas.collegeAdmin.collegeDetails import CollegeDetails
 router = APIRouter(tags=["College"])
 
 @router.get("/fetch-colleges", response_model=List[CollegeDetails])
-def fetch_colleges(db: Session = Depends(get_db)):
+async def fetch_colleges(db: AsyncSession = Depends(get_db)):
 
-    colleges = (
-        db.query(College)
-        .filter(College.status == True)
-        .all()
+    result = await db.execute(
+        select(College).filter(College.status == True)
     )
+    colleges = result.scalars().all()
 
     if not colleges:
         raise HTTPException(

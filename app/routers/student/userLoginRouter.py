@@ -1,18 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy import delete
 from app.db.session import get_db
 from app.security.googleOauth import verify_google_token
 from app.security.jwt import createAccessToken
 from uuid import UUID
+import asyncio
 from app.models.user.userModel import User
 from app.models.student.studentModel import Student
 from app.models.mess.messAdmin import MessAdmin
 from app.models.college.collegeAdmin import CollegeAdmin
 from app.models.user.userSession import UserSession
-
-from app.schemas.user.loginSchema import GoogleLoginRequest, UserLoginResponse,UserInfo
-
+from app.schemas.user.loginSchema import GoogleLoginRequest, UserLoginResponse, UserInfo
 from app.utils.userRole import UserRole
 from app.models.college.collegeModel import College
 
@@ -27,14 +27,15 @@ ROLE_MODEL_MAP = {
 
 
 @router.post("/login/google", response_model=UserLoginResponse)
-def login_with_google(
+async def login_with_google(
     data: GoogleLoginRequest,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-
+    print(data.college_id)
     print(data.role)
 
-    payload = verify_google_token(data.id_token)
+    # run sync blocking google token verification in threadpool
+    payload = await asyncio.to_thread(verify_google_token, data.id_token)
     # print("after verify google token")
     if not payload:
         raise HTTPException(401, "Invalid Google token")
@@ -50,14 +51,16 @@ def login_with_google(
 
     email = email.lower()
     # print(email)
-    college = db.query(College).filter(
-        College.id == data.college_id
-    ).first()
+
+    result = await db.execute(
+        select(College).filter(College.id == data.college_id)
+    )
+    college = result.scalar_one_or_none()
 
     if not college:
         raise HTTPException(404, "College not found")
 
-    college_domain=str(college.domain)
+    college_domain = str(college.domain)
     allowed_domain = college_domain.lower()
     print(allowed_domain)
 
@@ -73,21 +76,20 @@ def login_with_google(
     except ValueError:
         raise HTTPException(400, "Invalid role")
 
-    # find user
-    user = db.query(User).filter(User.email == email).first()
+    result = await db.execute(
+        select(User).filter(User.email == email)
+    )
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(403, "User not authorized")
 
-    # verify role
     if user.role != role:
         raise HTTPException(403, "Role mismatch")
 
-    # verify college
     if str(user.college_id) != str(data.college_id):
         raise HTTPException(403, "College mismatch")
 
-    # load role specific profile
     model = ROLE_MODEL_MAP.get(role)
 
     if not model:
@@ -108,28 +110,24 @@ def login_with_google(
     elif user.google_sub != google_sub:
         raise HTTPException(401, "Google account mismatch")
 
-    # update profile
-
     user.name = name
     user.picture = picture
     print(user.name)
 
-
     # db.add(profile)
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
 
-    # enforce single session
-    db.query(UserSession).filter(
-        UserSession.user_id == user.id
-    ).delete()
+    await db.execute(
+        delete(UserSession).where(UserSession.user_id == user.id)
+    )
 
     session = UserSession(user_id=user.id)
 
     db.add(session)
-    db.commit()
-    db.refresh(session)
+    await db.commit()
+    await db.refresh(session)
 
     token_payload = {
         "sub": str(user.id),

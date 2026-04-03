@@ -1,42 +1,60 @@
-# from datetime import datetime, date, time
-# from zoneinfo import ZoneInfo
-#
-# from app.models.mess.couponModel import MealType
-# from app.core.config import get_settings
-# from app.utils.mealSlot import MealSlot
-#
-# settings = get_settings()
-#
-# IST = ZoneInfo("Asia/Kolkata")
-#
-# MEAL_EXPIRY_MAP: dict[MealType, str] = {
-#     MealSlot.breakfast: settings.breakfast_expire,  # "11:00"
-#     MealSlot.lunch: settings.lunch_expire,          # "15:00"
-#     MealSlot.dinner: settings.dinner_expire,        # "22:00"
-# }
-#
-#
-# def compute_expiry_epoch(
-#     *,
-#     meal_date: date,
-#     meal: MealType,
-# ) -> int:
-#     """
-#     Expiry = meal_date + fixed meal clock time (IST).
-#     Independent of scheduler run time.
-#     Stored as UTC epoch.
-#     """
-#
-#     expiry_str = MEAL_EXPIRY_MAP[meal]
-#     hour, minute = map(int, expiry_str.split(":"))
-#
-#     # Create local datetime (IST)
-#     expiry_local_dt = datetime.combine(
-#         meal_date,
-#         time(hour=hour, minute=minute),
-#         tzinfo=IST,
-#     )
-#
-#     #  Convert to UTC epoch
-#     return int(expiry_local_dt.timestamp())
-#
+# app/services/couponQueryService.py
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from uuid import UUID
+from typing import Optional
+
+from app.models.mess.couponModel import Coupon
+from app.services.couponGenerationService import generate_coupons_for_week
+from app.services.couponPayloadService import build_coupon_payload, CouponPayload
+from app.utils.mealSlot import MealSlot
+
+IST = ZoneInfo("Asia/Kolkata")
+
+
+async def fetch_coupon_by_meal(
+    db: AsyncSession,
+    student_id: UUID,
+    mess_id: UUID,
+    college_id: UUID,
+    meal_slot: MealSlot,
+) -> CouponPayload:
+
+    today = datetime.now(IST).date()
+
+    result = await db.execute(
+        select(Coupon).filter(
+            Coupon.student_id == student_id,
+            Coupon.mess_id == mess_id,
+            Coupon.date == today,
+            Coupon.meal_slot == meal_slot,
+        )
+    )
+
+    coupon = result.scalar_one_or_none()
+
+    if not coupon:
+        await generate_coupons_for_week(db, mess_id, college_id)
+
+        result = await db.execute(
+            select(Coupon).filter(
+                Coupon.student_id == student_id,
+                Coupon.mess_id == mess_id,
+                Coupon.date == today,
+                Coupon.meal_slot == meal_slot,
+            )
+        )
+        coupon = result.scalar_one_or_none()
+
+        if not coupon:
+            raise HTTPException(404, "Coupon not found")
+
+    return await build_coupon_payload(
+       db=db,
+       coupon=coupon,
+    )

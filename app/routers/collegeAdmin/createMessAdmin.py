@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException,status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from uuid import UUID
 from app.db.session import get_db
 from app.models.mess.messAdmin import MessAdmin
@@ -17,26 +18,29 @@ router = APIRouter(
 )
 
 @router.post("/{mess_id}/admins", response_model=UserResponse)
-def create_mess_admin(
+async def create_mess_admin(
     mess_id: UUID,
     payload: UserCreate,
     current_user: User = Depends(get_current_role(UserRole.college_admin)),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-
-    mess = (
-        db.query(Mess)
-        .filter(
+    # -------- GET MESS --------
+    result = await db.execute(
+        select(Mess).filter(
             Mess.id == mess_id,
             Mess.college_id == current_user.college_id
         )
-        .first()
     )
+    mess = result.scalar_one_or_none()
 
     if not mess:
         raise HTTPException(404, "Mess not found")
 
-    user = db.query(User).filter(User.email == payload.email).first()
+    # -------- CHECK EXISTING USER --------
+    result = await db.execute(
+        select(User).filter(User.email == payload.email)
+    )
+    user = result.scalar_one_or_none()
 
     #will have to check this if each email is unique then throw error on same email
 
@@ -60,19 +64,18 @@ def create_mess_admin(
         )
 
         db.add(user)
-        db.flush()
+        await db.flush()
 
     # check if already assigned to this mess
     # here i am assuming that one mess admin can belong to many mess but letting one clg admin can
     # manage all messes
-    existing_relation = (
-        db.query(MessAdmin)
-        .filter(
+    result = await db.execute(
+        select(MessAdmin).filter(
             MessAdmin.user_id == user.id,
             MessAdmin.mess_id == mess_id
         )
-        .first()
     )
+    existing_relation = result.scalar_one_or_none()
 
     if existing_relation:
         raise HTTPException(
@@ -87,6 +90,6 @@ def create_mess_admin(
     )
 
     db.add(mess_admin)
-    db.commit()
+    await db.commit()
 
     return user

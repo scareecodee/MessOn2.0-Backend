@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.db.session import get_db
 from app.models.student.studentModel import Student
 from app.models.user.userModel import User
@@ -9,34 +10,37 @@ from app.security.dependencies.getCurrentRole import get_current_role
 from uuid import UUID
 
 router = APIRouter(
-    prefix="/admin/students",
-    tags=["Student Details Update"]
+    prefix="/admin",
+    tags=["Toggle Activation"]
 )
-
 @router.patch("/{user_id}/toggle-activation")
-def toggle_student_activation(
+async def toggle_student_activation(
     response: Response,
     user_id: UUID,
-    current_admin:User=Depends(get_current_role(UserRole.college_admin)),
-    db: Session = Depends(get_db)
+    current_admin: User = Depends(get_current_role([UserRole.college_admin])),
+    db: AsyncSession = Depends(get_db)
 ):
     # student_id = student_id.strip().lower()
     # print(student_uuid)
-    student = db.query(User).filter(User.id == user_id).first()
+    result = await db.execute(
+        select(User).where(
+            User.id == user_id,
+            User.college_id==current_admin.college_id
+    ))
+    user = result.scalar_one_or_none()
 
-    if not student:
-        response.status_code=status.HTTP_404_NOT_FOUND
+    if not user:
+        response.status_code = status.HTTP_404_NOT_FOUND
         return Toggle(
             is_active=False,
         )
 
+    user.is_active = not user.is_active
 
-    student.is_active = not student.is_active
+    await db.commit()
+    await db.refresh(user)
 
-    db.commit()
-    db.refresh(student)
-
-    response.status_code=status.HTTP_200_OK
+    response.status_code = status.HTTP_200_OK
     return Toggle(
-        is_active= bool(student.is_active)
+        is_active=bool(user.is_active)
     )

@@ -27,19 +27,17 @@ def upgrade():
     )
 
     # Trigram index for name search (ILIKE '%text%')
-    op.execute(
-        """
-        CREATE INDEX IF NOT EXISTS idx_students_name_trgm
-        ON students
-        USING gin (name gin_trgm_ops);
-        """
-    )
+    op.execute("""
+               CREATE INDEX IF NOT EXISTS idx_users_name_trgm
+                   ON users
+                   USING gin (name gin_trgm_ops);
+               """)
 
     # Pagination index for cursor pagination
     op.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_students_pagination
-        ON students (roll_number, created_at DESC, id DESC);
+        ON students (roll_number, created_at DESC, user_id DESC);
         """
     )
 
@@ -58,13 +56,3 @@ def downgrade():
         DROP INDEX IF EXISTS idx_students_name_trgm;
         """
     )
-
-    # Note:super_admin
-    # Usually we DO NOT drop extensions because other tables might use them.
-    # But if you want to remove it completely uncomment below.
-
-    # op.execute(
-    #     """
-    #     DROP EXTENSION IF EXISTS pg_trgm;
-    #     """
-    # )
