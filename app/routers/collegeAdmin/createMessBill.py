@@ -5,18 +5,18 @@ from uuid import UUID
 from datetime import date, timedelta
 from app.schemas.collegeAdmin.messBillConfigSchema import PerDayMealPriceResponse, PerDayMealPriceRequest
 from app.db.session import get_db
-from app.models.college.MessBillConfigModel import PerDayMealPrice
+from app.models.college.MessPerDayPriceConfigModel import PerDayMealPrice
 from app.models.user.userModel import User
 from app.security.dependencies.getCurrentRole import get_current_role
 from app.utils.userRole import UserRole
 from app.models.college.collegeAdmin import CollegeAdmin
 
 router = APIRouter(
-    prefix="/mess",
+    prefix="/mess/{mess_id}",
     tags=["Mess Bill"]
 )
 
-@router.patch("/bill-config/{mess_id}", response_model=PerDayMealPriceResponse)
+@router.patch("/per-day-meal-price", response_model=PerDayMealPriceResponse)
 async def update_mess_bill_config(
     payload: PerDayMealPriceRequest,
     mess_id: UUID,

@@ -84,3 +84,9 @@ class Coupon(Base):
         Index("ix_coupon_student_date", "student_id", "date"),
         Index("ix_coupon_mess_date", "mess_id", "date"),
     )
+
+    # CREATE
+    # INDEX
+    # idx_coupon_lookup
+    # ON
+    # coupons(student_id, mess_id, college_id, date, meal_slot);

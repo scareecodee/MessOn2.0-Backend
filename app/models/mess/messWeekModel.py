@@ -39,12 +39,12 @@ class MessWeek(Base):
         nullable=False
     )
 
-    generation_status: Mapped[str] = mapped_column(
+    coupon_generation_status: Mapped[str] = mapped_column(
         String,
         nullable=False,
         default="pending"
     )
-    generation_started_at : Mapped[datetime] = mapped_column(
+    coupon_generation_started_at : Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=True

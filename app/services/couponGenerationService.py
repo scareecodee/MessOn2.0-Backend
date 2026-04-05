@@ -51,7 +51,7 @@
 #             return
 #
 #         # -------- EARLY STATUS CHECK --------
-#         if week.generation_status != "pending":
+#         if week.coupon_generation_status != "pending":
 #             print("no gener status pending")
 #             return
 #
@@ -69,7 +69,7 @@
 #             await db.execute(
 #                 update(MessWeek)
 #                 .where(MessWeek.id == week.id)
-#                 .values(generation_status="skipped")
+#                 .values(coupon_generation_status="skipped")
 #             )
 #             await db.commit()
 #             print("Mess closed")
@@ -83,9 +83,9 @@
 #             update(MessWeek)
 #             .where(
 #                 MessWeek.id == week.id,
-#                 MessWeek.generation_status == "pending"
+#                 MessWeek.coupon_generation_status == "pending"
 #             )
-#             .values(generation_status="generated")
+#             .values(coupon_generation_status="generated")
 #             .returning(MessWeek.id)
 #         )
 #
@@ -327,11 +327,11 @@ async def generate_coupons_for_week(db: AsyncSession, mess_id, college_id):
         update(MessWeek)
         .where(
             MessWeek.id == week_id,
-            MessWeek.generation_status.in_(VALID_START_STATES)
+            MessWeek.coupon_generation_status.in_(VALID_START_STATES)
         )
         .values(
-            generation_status="generating",
-            generation_started_at=datetime.now(IST)
+            coupon_generation_status="generating",
+            coupon_generation_started_at=datetime.now(IST)
         )
         .returning(MessWeek.id)
     )
@@ -368,7 +368,7 @@ async def generate_coupons_for_week(db: AsyncSession, mess_id, college_id):
         await db.execute(
             update(MessWeek)
             .where(MessWeek.id == week_id)
-            .values(generation_status="generated")
+            .values(coupon_generation_status="generated")
         )
 
         await db.commit()
@@ -379,7 +379,7 @@ async def generate_coupons_for_week(db: AsyncSession, mess_id, college_id):
         await db.execute(
             update(MessWeek)
             .where(MessWeek.id == week_id)
-            .values(generation_status="failed")
+            .values(coupon_generation_status="failed")
         )
 
         await db.commit()

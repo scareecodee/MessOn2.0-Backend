@@ -29,7 +29,7 @@ def upgrade():
     op.create_check_constraint(
         "check_generation_status",
         "mess_weeks",
-        "generation_status IN ('pending','generating','generated','skipped','failed')"
+        "coupon_generation_status IN ('pending','generating','generated','skipped','failed')"
     )
 
 
@@ -44,5 +44,5 @@ def downgrade():
     op.create_check_constraint(
         "check_generation_status",
         "mess_weeks",
-        "generation_status IN ('pending','generated','skipped','failed')"
+        "coupon_generation_status IN ('pending','generated','skipped','failed')"
     )

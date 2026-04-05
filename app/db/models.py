@@ -13,7 +13,7 @@ from app.models.mess.messWeekModel import MessWeek
 from app.models.mess.messClosureModel import MessClosure
 from app.models.mess.submissionWindowTemplateModel import SubmissionWindowTemplate
 from app.models.mess.messClosureModel import MessClosure
-from app.models.college.MessBillConfigModel import PerDayMealPrice
+from app.models.college.MessPerDayPriceConfigModel import PerDayMealPrice
 
 
 #
