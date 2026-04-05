@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, Integer, Float
+from sqlalchemy import Date, ForeignKey, Integer, Float, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
@@ -33,4 +33,9 @@ class PerDayMealPrice(Base):
 
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
 
-    end_date: Mapped[date| None] = mapped_column(Date , nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    __table_args__ = (
+
+        Index("index_price_config", "mess_id", "college_id", start_date),
+    )

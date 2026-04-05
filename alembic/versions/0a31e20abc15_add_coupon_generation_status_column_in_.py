@@ -22,18 +22,18 @@ def upgrade():
     # -------- ADD COLUMN --------
     op.add_column(
         "mess_weeks",
-        sa.Column("generation_status", sa.String(), nullable=True)
+        sa.Column("coupon_generation_status", sa.String(), nullable=True)
     )
 
     # -------- BACKFILL --------
     op.execute(
-        "UPDATE mess_weeks SET generation_status = 'pending'"
+        "UPDATE mess_weeks SET coupon_generation_status = 'pending'"
     )
 
     # -------- DEFAULT --------
     op.alter_column(
         "mess_weeks",
-        "generation_status",
+        "coupon_generation_status",
         server_default="pending"
     )
 
@@ -41,17 +41,17 @@ def upgrade():
     op.create_check_constraint(
         "check_generation_status",
         "mess_weeks",
-        "generation_status IN ('pending','generated','skipped','failed')"
+        "coupon_generation_status IN ('pending','generated','skipped','failed')"
     )
 
     # -------- NOT NULL --------
     op.alter_column(
         "mess_weeks",
-        "generation_status",
+        "coupon_generation_status",
         nullable=False
     )
 
 
 def downgrade():
     op.drop_constraint("check_generation_status", "mess_weeks", type_="check")
-    op.drop_column("mess_weeks", "generation_status")
+    op.drop_column("mess_weeks", "coupon_generation_status")

@@ -29,7 +29,18 @@ class BillResponse(BaseModel):
      roll_no: str
      branch: str
      batch: int
-     total_bill_days: int
-     bill_start_date : date
-     bill_end_date : date
+     total_billing_periods: int
+     billing_start_date : date
+     billing_end_date : date
      total_bill : float
+
+class MealDetail(BaseModel):
+    meal_type: str | None
+    consumed: bool
+    selected: bool
+
+class StudentMealDay(BaseModel):
+    date: date
+    breakfast: MealDetail
+    lunch: MealDetail
+    dinner: MealDetail

@@ -1,4 +1,4 @@
-"""adding generation_started_at column in mess_weeks model
+"""adding coupon_generation_started_at column in mess_weeks model
 
 Revision ID: 164c153050dc
 Revises: 387d7e9cd297
@@ -21,8 +21,8 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade():
     op.add_column(
         "mess_weeks",
-        sa.Column("generation_started_at", sa.DateTime(timezone=True), nullable=True)
+        sa.Column("coupon_generation_started_at", sa.DateTime(timezone=True), nullable=True)
     )
 
 def downgrade():
-    op.drop_column("mess_weeks", "generation_started_at")
+    op.drop_column("mess_weeks", "coupon_generation_started_at")
