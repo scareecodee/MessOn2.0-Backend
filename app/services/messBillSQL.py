@@ -83,6 +83,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 #
 # """
 
+
 ALL_STUDENTS_BILL = """
 WITH valid_coupons AS (
     SELECT DISTINCT
@@ -92,6 +93,7 @@ WITH valid_coupons AS (
     WHERE c.date BETWEEN :start_date AND :end_date
     AND c.mess_id = :mess_id
     AND c.college_id = :college_id
+    {student_filter}
 
     AND NOT EXISTS (
         SELECT 1 FROM mess_closures mc
@@ -173,9 +175,10 @@ LEFT JOIN aggregated a
 
 WHERE s.mess_id = :mess_id
 AND s.college_id = :college_id
+{student_filter_outer}
 
 GROUP BY s.user_id, u.name, u.email, s.roll_number, s.branch, s.batch
-ORDER BY s.roll_number;
+ORDER BY s.roll_number
 """
 
 
@@ -228,3 +231,4 @@ AND NOT EXISTS (
 GROUP BY c.student_id, c.date
 ORDER BY c.date;
 """
+

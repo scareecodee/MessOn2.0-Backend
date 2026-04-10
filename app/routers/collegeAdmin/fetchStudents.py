@@ -50,7 +50,6 @@ async def get_students(
     # if params.batch:
     #     query = query.where(Student.batch == params.batch)
 
-    # ---------------- UNIFIED SEARCH ----------------
     if params.search:
         search_lower = params.search.lower()
 

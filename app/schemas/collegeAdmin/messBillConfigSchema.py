@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, EmailStr
 from datetime import date
@@ -34,13 +34,18 @@ class BillResponse(BaseModel):
      billing_end_date : date
      total_bill : float
 
+
 class MealDetail(BaseModel):
     meal_type: str | None
     consumed: bool
     selected: bool
 
-class StudentMealDay(BaseModel):
+class StudentMealConsumptionHistory(BaseModel):
     date: date
     breakfast: MealDetail
     lunch: MealDetail
     dinner: MealDetail
+
+class StudentDetailedBillHistory(BaseModel):
+    consumption_history:List[StudentMealConsumptionHistory]
+    bill:List[BillResponse]
