@@ -1,4 +1,6 @@
 from datetime import date
+from uuid import UUID
+from sqlalchemy import text
 
 from sqlalchemy import text
 from app.schemas.collegeAdmin import messBillConfigSchema
@@ -7,14 +9,15 @@ from app.utils.billRangeNormalizer import normalize_billing_range
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.messBillSQL import ALL_STUDENTS_BILL, STUDENT_DETAILED_BILL_HISTORY
-from app.schemas.collegeAdmin.messBillConfigSchema import BillResponse, MealDetail, StudentMealDay
+from app.schemas.collegeAdmin.messBillConfigSchema import BillResponse, MealDetail, StudentMealConsumptionHistory
 
 
-async def calculate_all_students_mess_bill(
+async def calculate_students_mess_bill(
     db: AsyncSession,
     mess_id,
     college_id,
     range_type,
+    student_id : UUID | None = None,
     n_days=None,
     start_date=None,
     end_date=None,
@@ -28,15 +31,28 @@ async def calculate_all_students_mess_bill(
         mess_start_date=mess_start_date
     )
 
-    result = await db.execute(
-        text(ALL_STUDENTS_BILL),
-        {
-            "mess_id": mess_id,
-            "college_id": college_id,
-            "start_date": start_date,
-            "end_date": end_date,
-        }
+
+    student_filter = ""
+    student_filter_outer = ""
+
+    params = {
+        "start_date": start_date,
+        "end_date": end_date,
+        "mess_id": mess_id,
+        "college_id": college_id,
+    }
+
+    if student_id:
+        student_filter = "AND c.student_id = :student_id"
+        student_filter_outer = "AND s.user_id = :student_id"
+        params["student_id"] = student_id
+
+    sql = ALL_STUDENTS_BILL.format(
+        student_filter=student_filter,
+        student_filter_outer=student_filter_outer
     )
+
+    result = await db.execute(text(sql), params)
 
     rows = result.fetchall()
 
@@ -65,7 +81,7 @@ async def get_student_detailed_bill_history(
     start_date = None,
     end_date = None,
     mess_start_date = None
-):
+)-> list[StudentMealConsumptionHistory]:
     start_date, end_date = normalize_billing_range(
         range_type=range_type,
         n_days=n_days,
@@ -88,20 +104,20 @@ async def get_student_detailed_bill_history(
     rows = result.fetchall()
 
     return [
-        StudentMealDay(
+        StudentMealConsumptionHistory(
             date=row.date,
             breakfast=MealDetail(
-                meal_type=row.breakfast_type,
+                meal_type=row.breakfast_type if row.breakfast_type else None,
                 consumed=(row.breakfast_status == "consumed"),
                 selected=(row.breakfast_type is not None),
             ),
             lunch=MealDetail(
-                meal_type=row.lunch_type,
+                meal_type=row.lunch_type if row.lunch_type else None,
                 consumed=(row.lunch_status == "consumed"),
                 selected=(row.lunch_type is not None),
             ),
             dinner=MealDetail(
-                meal_type=row.dinner_type,
+                meal_type=row.dinner_type if row.dinner_type else None,
                 consumed=(row.dinner_status == "consumed"),
                 selected=(row.dinner_type is not None),
             ),

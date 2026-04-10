@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -52,18 +54,18 @@ async def generate_coupons_manual(
         )
     )
 
-    week = result.scalar_one_or_none()
+    week : Optional[MessWeek] = result.scalar_one_or_none()
 
     if not week:
         raise HTTPException(404, "No active week found")
 
-    if week.generation_status == "generated":
+    if week.coupon_generation_status == "generated":
         return {
             "status": "already_generated",
             "week_id": str(week.id)
         }
 
-    if week.generation_status == "skipped":
+    if week.coupon_generation_status == "skipped":
         return {
             "status": "skipped_week",
             "reason": "mess closed entire week"

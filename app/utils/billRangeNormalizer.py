@@ -4,9 +4,9 @@ from fastapi import HTTPException
 def normalize_billing_range(
     *,
     range_type,
-    n_days: int | None,
-    start_date: date | None,
-    end_date: date | None,
+    n_days: int ,
+    start_date: date ,
+    end_date: date ,
     mess_start_date: date
 ) -> tuple[date, date]:
 
@@ -28,12 +28,14 @@ def normalize_billing_range(
     else:
         raise HTTPException(400, "Invalid range_type")
 
-    if start_date < mess_start_date:
-        start_date = mess_start_date
-    else:
-        start_date = start_date
+    # if start_date < mess_start_date:
+    #     start_date = mess_start_date
+    # else:
+    #     start_date = start_date
 
-    # start_date = max(start_date, mess_start_date)
+    print(mess_start_date)
+
+    start_date = max(start_date, mess_start_date)
     end_date = min(end_date, today)
 
     if start_date > end_date:
