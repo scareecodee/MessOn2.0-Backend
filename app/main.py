@@ -9,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers.collegeAdmin import (
     fetchCollegeDetails, createMess, fetchAllMess, createMessAdmin,
     fetchMessAdmins, bulkStudentsImport, fetchStudents, createStudentsManually, studentActivation,
-    updateStudentDetails, createMessBill, AllStudentMessBill, studentDetailedMealConsumptionHistory,studentMessBillRouter
+    updateStudentDetails, createMessBill, AllStudentMessBill, studentDetailedMealConsumptionHistory,
+    studentMessBillRouter, deleteMess,deleteMessAdmin,deleteStudents
 )
 
 from app.routers.mess import (
@@ -97,6 +98,9 @@ app.include_router(createMessBill.router)
 app.include_router(AllStudentMessBill.router)
 app.include_router(studentDetailedMealConsumptionHistory.router)
 app.include_router(studentMessBillRouter.router)
+app.include_router(deleteMess.router)
+app.include_router(deleteStudents.router)
+app.include_router(deleteMessAdmin.router)
 
 
 

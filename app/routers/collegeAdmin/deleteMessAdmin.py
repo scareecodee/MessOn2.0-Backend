@@ -10,11 +10,11 @@ from app.models.mess.messAdmin import MessAdmin
 from app.utils.userRole import UserRole
 
 router = APIRouter(
-    prefix="/delete/mess",
-    tags=["Manage Mess"]
+    prefix="/delete",
+    tags=["College Admins Mess Deletion Operations"]
 )
 
-@router.delete("/{mess-admin_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/mess-admin/{mess_admin_id}")
 async def delete_mess_admin(
     mess_admin_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -29,11 +29,11 @@ async def delete_mess_admin(
     mess_admin = result.scalar_one_or_none()
 
     if not mess_admin:
-        raise HTTPException(404, "Mess not found")
+        raise HTTPException(404, "Mess Admin not found")
 
     await db.delete(mess_admin)
     await db.commit()
 
-    return Response(
-        status_code=status.HTTP_204_NO_CONTENT,
-    )
+    return {
+        "message": "Mess Admin deleted successfully",
+    }
