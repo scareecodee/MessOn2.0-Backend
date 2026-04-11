@@ -10,14 +10,14 @@ from app.utils.userRole import UserRole
 
 router = APIRouter(
     prefix="/delete",
-    tags=["Mess Admin Management"]
+    tags=["College Admins Mess Deletion Operations"]
 )
 
 @router.delete("/mess/{mess_id}")
 async def delete_mess(
     mess_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_role(UserRole.college_admin))
+    current_user: User = Depends(get_current_role([UserRole.college_admin]))
 ):
     result = await db.execute(
         select(Mess).filter(
@@ -33,6 +33,6 @@ async def delete_mess(
     await db.delete(mess)
     await db.commit()
 
-    return Response(
-        status_code=status.HTTP_204_NO_CONTENT,
-    )
+    return {
+        "message": "Mess deleted successfully"
+    }
