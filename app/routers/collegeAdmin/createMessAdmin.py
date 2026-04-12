@@ -21,10 +21,9 @@ router = APIRouter(
 async def create_mess_admin(
     mess_id: UUID,
     payload: UserCreate,
-    current_user: User = Depends(get_current_role(UserRole.college_admin)),
+    current_user: User = Depends(get_current_role([UserRole.college_admin])),
     db: AsyncSession = Depends(get_db)
 ):
-    # -------- GET MESS --------
     result = await db.execute(
         select(Mess).filter(
             Mess.id == mess_id,
@@ -36,7 +35,6 @@ async def create_mess_admin(
     if not mess:
         raise HTTPException(404, "Mess not found")
 
-    # -------- CHECK EXISTING USER --------
     result = await db.execute(
         select(User).filter(User.email == payload.email)
     )

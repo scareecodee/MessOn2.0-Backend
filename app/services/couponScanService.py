@@ -1,4 +1,3 @@
-# app/services/couponScanService.py
 from time import timezone
 from typing import Optional
 
@@ -70,7 +69,6 @@ async def scan_coupon(
 
     student, user = row
 
-    # -------- 3. STRICT VALIDATION --------
     # if coupon.student_id != payload.student_id:
     #     errors.append(ErrorDetail(code=401, message="Invalid student"))
     #

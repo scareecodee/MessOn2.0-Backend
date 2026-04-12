@@ -19,32 +19,28 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade():
-    # -------- ADD COLUMN --------
     op.add_column(
         "mess_weeks",
         sa.Column("coupon_generation_status", sa.String(), nullable=True)
     )
 
-    # -------- BACKFILL --------
     op.execute(
         "UPDATE mess_weeks SET coupon_generation_status = 'pending'"
     )
 
-    # -------- DEFAULT --------
     op.alter_column(
         "mess_weeks",
         "coupon_generation_status",
         server_default="pending"
     )
 
-    # -------- CHECK CONSTRAINT --------
+
     op.create_check_constraint(
         "check_generation_status",
         "mess_weeks",
         "coupon_generation_status IN ('pending','generated','skipped','failed')"
     )
 
-    # -------- NOT NULL --------
     op.alter_column(
         "mess_weeks",
         "coupon_generation_status",

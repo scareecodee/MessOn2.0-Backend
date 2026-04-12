@@ -10,7 +10,7 @@ from app.routers.collegeAdmin import (
     fetchCollegeDetails, createMess, fetchAllMess, createMessAdmin,
     fetchMessAdmins, bulkStudentsImport, fetchStudents, createStudentsManually, studentActivation,
     updateStudentDetails, createMessBill, AllStudentMessBill, studentDetailedMealConsumptionHistory,
-    studentMessBillRouter, deleteMess,deleteMessAdmin,deleteStudents
+    studentMessBillRouter, deleteMess,deleteUsers, createCollegeAdmin
 )
 
 from app.routers.mess import (
@@ -99,8 +99,8 @@ app.include_router(AllStudentMessBill.router)
 app.include_router(studentDetailedMealConsumptionHistory.router)
 app.include_router(studentMessBillRouter.router)
 app.include_router(deleteMess.router)
-app.include_router(deleteStudents.router)
-app.include_router(deleteMessAdmin.router)
+app.include_router(createCollegeAdmin.router)
+app.include_router(deleteUsers.router)
 
 
 
