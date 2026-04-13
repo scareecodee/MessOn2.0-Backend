@@ -22,7 +22,7 @@ async def create_mess(
     current_user: User = Depends(get_current_role([UserRole.college_admin]))
 ):
     mess = Mess(
-        college_id=current_user.college_id,  # stop over-converting UUID like this
+        college_id=current_user.college_id,
         name=mess_details.name,
         location=mess_details.location,
         is_active=mess_details.is_active

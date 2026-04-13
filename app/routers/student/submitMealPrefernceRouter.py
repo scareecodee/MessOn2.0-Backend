@@ -1,4 +1,3 @@
-# app/api/routes/meal_preference_submit.py
 from typing import Optional
 from zoneinfo import ZoneInfo
 

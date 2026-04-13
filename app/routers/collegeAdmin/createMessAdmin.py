@@ -40,7 +40,6 @@ async def create_mess_admin(
     )
     user = result.scalar_one_or_none()
 
-    #will have to check this if each email is unique then throw error on same email
 
     if user:
 
@@ -49,10 +48,10 @@ async def create_mess_admin(
                 status_code=400,
                 detail="Email already belongs to a student or college admin"
             )
+        user.name = payload.name
 
     else:
 
-        # create new mess admin user
         user = User(
             college_id=current_user.college_id,
             name=payload.name,
@@ -64,9 +63,6 @@ async def create_mess_admin(
         db.add(user)
         await db.flush()
 
-    # check if already assigned to this mess
-    # here i am assuming that one mess admin can belong to many mess but letting one clg admin can
-    # manage all messes
     result = await db.execute(
         select(MessAdmin).filter(
             MessAdmin.user_id == user.id,

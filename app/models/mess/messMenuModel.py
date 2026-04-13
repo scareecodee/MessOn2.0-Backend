@@ -11,8 +11,6 @@ from app.utils.mealType import MealType
 from app.utils.menuWeek import MenuWeek
 
 
-# from app.utils.menuWeek import MenuWeek  # kept for reference
-
 
 class Menu(Base):
     __tablename__ = "mess_menu"
@@ -77,8 +75,10 @@ class Menu(Base):
             name="unique_menu_per_slot"
         ),
 
-    #     Index(
-    #         "ix_menu_lookup",
-    #         "mess_id", "week_id", "day"
-    #     ),
-    )
+        Index(
+            "ix_menu_lookup",
+            "mess_id",
+            "week_id",
+            "day"
+        ),
+ )

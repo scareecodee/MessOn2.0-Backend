@@ -1,5 +1,3 @@
-# app/api/routes/admin_readiness.py
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select

@@ -1,37 +1,40 @@
-import uuid
-from sqlalchemy.orm import Session
-from utils.hash_pwd import get_password_hash  # your bcrypt function
+from sqlalchemy import select
+from app.models.rootAdmin.rootAdminUserModel import RootAdmin
+from app.utils.hash_pwd import get_password_hash
+from app.db.session import AsyncSessionLocal
+from app.core.config import get_settings
 
+settings = get_settings()
 
-def seed_super_admins(db: Session):
-    admins = [
-        {
-            "email": "bipinchourasia14@gmail.com",
-            "password": "bipin123"
-        },
-        {
-            "email": "b524066@iiit-bh.ac.in",
-            "password": "sundram123"
-        }
-    ]
+async def seed_root_admins():
+    async with AsyncSessionLocal() as db:
 
-    for admin_data in admins:
-        existing = db.query(SuperAdmin).filter(
-            SuperAdmin.email == admin_data["email"]
-        ).first()
+        admins = [
+            {
+                "email": settings.root_admin_1_email,
+                "name": settings.root_admin_1_name,
+                "password": settings.root_admin_1_password
+            }
+        ]
 
-        if existing:
-            print(f"{admin_data['email']} already exists")
-            continue
+        for admin_data in admins:
+            if not admin_data["email"] or not admin_data["password"]:
+                continue
 
-        super_admin = SuperAdmin(
-            id=uuid.uuid4(),
-            email=admin_data["email"],
-            password=get_password_hash(admin_data["password"]),
-            role="super_admin"
-        )
+            result = await db.execute(
+                select(RootAdmin).where(
+                    RootAdmin.email == admin_data["email"]
+                )
+            )
+            existing = result.scalar_one_or_none()
 
-        db.add(super_admin)
+            if not existing:
+                new_admin = RootAdmin(
+                    name=admin_data["name"],
+                    email=admin_data["email"],
+                    password=get_password_hash(admin_data["password"]),
+                    is_active=True
+                )
+                db.add(new_admin)
 
-    db.commit()
-    print("Seeding completed")
+        await db.commit()

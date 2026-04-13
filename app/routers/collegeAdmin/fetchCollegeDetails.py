@@ -24,7 +24,7 @@ async def fetch_colleges(db: AsyncSession = Depends(get_db)):
 
     return [
         CollegeDetails(
-            college_id=str(c.id),
+            college_id=c.id,
             college_name=str(c.name)
         )
         for c in colleges

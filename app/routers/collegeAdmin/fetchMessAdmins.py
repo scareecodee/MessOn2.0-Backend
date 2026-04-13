@@ -22,7 +22,6 @@ async def list_mess_admins(
     current_user: User = Depends(get_current_role([UserRole.college_admin])),
     db: AsyncSession = Depends(get_db)
 ):
-    # -------- VERIFY MESS --------
     result = await db.execute(
         select(Mess).filter(
             Mess.id == mess_id,
@@ -30,11 +29,9 @@ async def list_mess_admins(
         )
     )
     mess = result.scalar_one_or_none()
-    print("mess")
 
     if not mess:
         raise HTTPException(404, "Mess not found")
-    print("mess out")
 
     result = await db.execute(
         select(User)

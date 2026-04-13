@@ -23,16 +23,16 @@ async def update_mess_closure(
     current_user = Depends(get_current_role([UserRole.college_admin])),
 ):
 
-    # mess_admin = await db.execute(
-    #     select(MessAdmin).filter(
-    #         MessAdmin.user_id == current_user.id,
-    #         MessAdmin.college_id == current_user.college_id
-    #     )
-    # )
-    # mess_admin = mess_admin.scalar_one_or_none()
-    #
-    # if not mess_admin:
-    #     raise HTTPException(404, "Mess admin not found")
+    mess_admin = await db.execute(
+        select(MessAdmin).filter(
+            MessAdmin.user_id == current_user.id,
+            MessAdmin.college_id == current_user.college_id
+        )
+    )
+    mess_admin = mess_admin.scalar_one_or_none()
+
+    if not mess_admin:
+        raise HTTPException(404, "Mess admin not found")
 
     result = await db.execute(
         select(MessClosure).where(

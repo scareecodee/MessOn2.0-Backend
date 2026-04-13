@@ -47,8 +47,8 @@ async def run_with_retry():
 scheduler.add_job(
     run_with_retry,
     trigger="cron",
-    hour=3,
-    minute=42,
+    hour=2,
+    minute=10,
     timezone="Asia/Kolkata"
 )
 

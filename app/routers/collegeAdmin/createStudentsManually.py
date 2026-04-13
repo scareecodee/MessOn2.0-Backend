@@ -48,16 +48,15 @@ async def create_students(
 
     for student in payload:
 
-        # -------- DOMAIN CHECK --------
-        # if not student.email.endswith(allowed_domain):
-        #     conflicts.append(
-        #         AddManuallyConflictResponse(
-        #             email=student.email,
-        #             roll_number=student.roll_number,
-        #             message=f"Email must end with {allowed_domain}"
-        #         )
-        #     )
-        #     continue
+        if not student.email.endswith(allowed_domain):
+            conflicts.append(
+                AddManuallyConflictResponse(
+                    email=student.email,
+                    roll_number=student.roll_number,
+                    message=f"Email must end with {allowed_domain}"
+                )
+            )
+            continue
 
         result = await db.execute(
             select(User).filter(User.email == student.email)

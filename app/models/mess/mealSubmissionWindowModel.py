@@ -5,9 +5,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
-# from app.utils.menuWeek import MenuWeek  # kept for reference
-
-
 class MealSubmissionWindow(Base):
     __tablename__ = "submission_windows"
 

@@ -1,13 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from uuid import UUID
 from app.db.session import get_db
 from app.models.college.collegeAdmin import CollegeAdmin
 from app.models.college.collegeModel import College
-from app.models.mess.messAdmin import MessAdmin
 from app.models.user.userModel import User
-from app.models.mess.messModel import Mess
 from app.schemas.user.createUser import UserCreate
 from app.schemas.user.userResponse import UserResponse
 from app.security.dependencies.getCurrentRole import get_current_role

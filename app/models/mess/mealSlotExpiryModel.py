@@ -1,5 +1,3 @@
-# app/models/meal_slot_expiry.py
-
 import uuid
 from sqlalchemy import ForeignKey, UniqueConstraint, Time
 from sqlalchemy.dialects.postgresql import UUID

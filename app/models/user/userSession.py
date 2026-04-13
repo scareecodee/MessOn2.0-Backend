@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime, timezone
-from sqlalchemy import String, DateTime, ForeignKey,func
+from datetime import datetime
+from sqlalchemy import DateTime, ForeignKey, func, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
@@ -14,7 +14,8 @@ class UserSession(Base):
         primary_key=True,
         default=uuid.uuid4
     )
-    user_id: Mapped[UUID] = mapped_column(
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id"),
         nullable=False
     )
@@ -24,4 +25,12 @@ class UserSession(Base):
         server_default=func.now()
     )
 
-    status: Mapped[bool] = mapped_column(default=True)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True
+    )

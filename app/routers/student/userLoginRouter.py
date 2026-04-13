@@ -15,6 +15,7 @@ from app.models.user.userSession import UserSession
 from app.schemas.user.loginSchema import GoogleLoginRequest, UserLoginResponse, UserInfo
 from app.utils.userRole import UserRole
 from app.models.college.collegeModel import College
+from app.services.createUserSession import create_user_session
 
 router = APIRouter(tags=["Google Login"])
 
@@ -31,12 +32,9 @@ async def login_with_google(
     data: GoogleLoginRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    print(data.college_id)
-    print(data.role)
 
-    # run sync blocking google token verification in threadpool
+
     payload = await asyncio.to_thread(verify_google_token, data.id_token)
-    # print("after verify google token")
     if not payload:
         raise HTTPException(401, "Invalid Google token")
 
@@ -50,7 +48,6 @@ async def login_with_google(
         raise HTTPException(400, "Email not verified")
 
     email = email.lower()
-    # print(email)
 
     result = await db.execute(
         select(College).filter(College.id == data.college_id)
@@ -60,9 +57,8 @@ async def login_with_google(
     if not college:
         raise HTTPException(404, "College not found")
 
-    college_domain = str(college.domain)
-    allowed_domain = college_domain.lower()
-    print(allowed_domain)
+    # college_domain = str(college.domain)
+    # allowed_domain = college_domain.lower()
 
     # if not email.endswith(allowed_domain):
     #    raise HTTPException(
@@ -70,7 +66,6 @@ async def login_with_google(
     #             detail="Institute email required"
     #          )
 
-    # validate role
     try:
         role = UserRole(data.role)
     except ValueError:
@@ -104,15 +99,13 @@ async def login_with_google(
     if not user.is_active:
         raise HTTPException(403, "Account inactive")
 
-    # bind google account first login
     if user.google_sub is None:
         user.google_sub = google_sub
     elif user.google_sub != google_sub:
         raise HTTPException(401, "Google account mismatch")
 
-    user.name = name
+    # user.name = name
     user.picture = picture
-    print(user.name)
 
     # db.add(profile)
     db.add(user)
@@ -123,11 +116,11 @@ async def login_with_google(
         delete(UserSession).where(UserSession.user_id == user.id)
     )
 
-    session = UserSession(user_id=user.id)
+    session = await create_user_session(db,user.id)
 
-    db.add(session)
-    await db.commit()
-    await db.refresh(session)
+    # db.add(session)
+    # await db.commit()
+    # await db.refresh(session)
 
     token_payload = {
         "sub": str(user.id),
@@ -135,9 +128,8 @@ async def login_with_google(
         "college_id": str(user.college_id),
         "session_id": str(session.id)
     }
-    print("generating access token")
     access_token, expires_at = createAccessToken.create_access_token(token_payload)
-    print(access_token)
+    print("users access token",  access_token)
     return UserLoginResponse(
         access_token=access_token,
         token_type="bearer",

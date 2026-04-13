@@ -10,6 +10,36 @@ from app.security.verifySession.session import verify_session
 security = HTTPBearer()
 
 
+# async def get_token_payload(
+#     credentials: HTTPAuthorizationCredentials = Depends(security),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     token = credentials.credentials.strip()
+#
+#     try:
+#         payload = verify_access_token(token)
+#
+#         user_id = payload.get("sub")
+#         role = payload.get("role")
+#         college_id = payload.get("college_id")
+#         session_id = payload.get("session_id")
+#
+#         if not all([user_id, role, college_id, session_id]):
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Invalid token payload"
+#             )
+#
+#     except JWTError:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Invalid or expired token"
+#         )
+#
+#     await verify_session(session_id, db)
+#
+#     return payload
+
 async def get_token_payload(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db)
@@ -24,11 +54,21 @@ async def get_token_payload(
         college_id = payload.get("college_id")
         session_id = payload.get("session_id")
 
-        if not all([user_id, role, college_id, session_id]):
+        if not user_id or not role or not session_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload"
             )
+
+        if role == "root_admin":
+            pass
+
+        else:
+            if not college_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="College ID missing in token"
+                )
 
     except JWTError:
         raise HTTPException(
@@ -36,7 +76,6 @@ async def get_token_payload(
             detail="Invalid or expired token"
         )
 
-    # ✅ FIXED
     await verify_session(session_id, db)
 
     return payload
