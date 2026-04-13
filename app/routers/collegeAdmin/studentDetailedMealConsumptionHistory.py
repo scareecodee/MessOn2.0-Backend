@@ -39,7 +39,6 @@ async def generate_mess_bill(
         )
         student : Optional[Student] = students.scalar_one_or_none()
 
-        print(student.user_id)
 
         mess_weeks = await db.execute(
             select(MessWeek).filter(
@@ -138,10 +137,6 @@ async def generate_mess_bill(
             }
         )
 
-    # return {
-    #     "total_days": len(students_bill_history),
-    #     "data": students_bill_history,
-    # }
     return StudentDetailedBillHistory(
         consumption_history=students_bill_history,
         bill=students_bill,

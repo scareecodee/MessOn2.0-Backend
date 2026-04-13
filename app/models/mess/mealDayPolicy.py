@@ -40,10 +40,6 @@ class MessDayPolicy(Base):
         index=True
     )
 
-    # menu_week: Mapped[MenuWeek] = mapped_column(
-    #     Enum(MenuWeek, name="menu_week_enum"),
-    #     nullable=False
-    # )
 
     is_compulsory: Mapped[bool] = mapped_column(default=True,nullable=False)
 

@@ -24,16 +24,6 @@ async def get_mess_closures(
     current_user = Depends(get_current_role([UserRole.college_admin])),
 ):
 
-    # user = await db.execute(
-    #     select(CollegeAdmin).filter(
-    #         CollegeAdmin.id == current_user.id,
-    #         CollegeAdmin.college_id == current_user.college_id
-    #     )
-    # )
-    # college_admin = user.scalar_one_or_none()
-    #
-    # if not college_admin:
-    #     raise HTTPException(404, " College Mess admin not found")
 
 
 

@@ -45,4 +45,6 @@ class Mess(Base):
         onupdate=func.now()
     )
 
+
+
     # students: Mapped[list["Student"]] = relationship()

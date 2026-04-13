@@ -23,6 +23,16 @@ class Settings(BaseSettings):
     max_csv_file_size:int
     csv_upload_timelimit:int
     cursor_secret:str
+    root_admin_1_email:str
+    root_admin_1_name:str
+    root_admin_1_password:str
+    college_name:str
+    college_domain:str
+    college_admin_1_name:str
+    college_admin_1_email:str
+    college_admin_2_name:str
+    college_admin_2_email:str
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

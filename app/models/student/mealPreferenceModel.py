@@ -8,9 +8,6 @@ from app.db.enums import meal_slot_enum, meal_type_enum
 from app.utils.mealSlot import MealSlot
 from app.utils.mealType import MealType
 
-# from app.utils.menuWeek import MenuWeek  # kept for reference
-# from app.utils.weekDay import WeekDays   # kept for reference
-
 
 class MealPreference(Base):
     __tablename__ = "meal_preferences"

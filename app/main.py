@@ -1,16 +1,34 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from uvloop import includes
+
 from app.db.session import get_db
 from dotenv import load_dotenv
 from app.tasks.cronJobs import start_scheduler
 from app.db.models import init_db
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends
+from contextlib import asynccontextmanager
+from sqlalchemy.ext.asyncio import AsyncSession
+from dotenv import load_dotenv
+
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.db.session import get_db
+from app.db.models import init_db
+from app.tasks.cronJobs import start_scheduler
+from app.db.seeds.seed_super_admin import seed_root_admins
+from app.db.seeds.seed_clg_and_clgAdmin import seed_college_and_admin
+
+from app.routers.rootAdmin import (
+     rootAdminLogin,createCollegeAdminByRootAdmin,createCollege
+)
 
 from app.routers.collegeAdmin import (
     fetchCollegeDetails, createMess, fetchAllMess, createMessAdmin,
     fetchMessAdmins, bulkStudentsImport, fetchStudents, createStudentsManually, studentActivation,
     updateStudentDetails, createMessBill, AllStudentMessBill, studentDetailedMealConsumptionHistory,
-    studentMessBillRouter, deleteMess,deleteMessAdmin,deleteStudents
+    studentMessBillRouter, deleteMess,deleteUsers, createCollegeAdmin
 )
 
 from app.routers.mess import (
@@ -18,48 +36,52 @@ from app.routers.mess import (
     createMealSlotExpiryRouter, generateMessWeekRouter, createSubmissionWindowRouter,
     generateCouponsManually, scanCouponRouter, submissionWindowTemplateRouter, fetchMealSlotExpiryRouter,
     createMessClosureRouter, updateMessClosureRouter, fetchMessClosureRouter,
-    fetchMealPreferenceAnalytics, scannedCouponAnalyticsRouter
+    fetchMealPreferenceAnalytics, scannedCouponAnalyticsRouter,fetchMealRatingAnalytics
 )
 from app.routers.student import (
      fetchMenuRouter,mealAvailabilityRouter,fetchMealPreferenceRouter,userLoginRouter,submitMealPrefernceRouter,
-     fetchCouponRouter
+     fetchCouponRouter,submitMealRatingRouter
 
 )
 
+
 load_dotenv()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    await seed_root_admins()
+    await seed_college_and_admin()
+    start_scheduler()
+
+    yield
+
+
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  #  allow all during development
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup():
-    await init_db()
-
-
-@app.on_event("startup")
-async def startup():
-    start_scheduler()
 @app.get("/db-test")
 async def db_test(db: AsyncSession = Depends(get_db)):
     return {"status": "connected"}
 
-# @app.get("/startup")
-# def startup():
-#     print("SERVER INSTANCE ID:", id(app))
-#     pass
-#
-#
-# @app.on_event("startup")
-# def startup_event():
 
 
+
+
+app.include_router(rootAdminLogin.router)
+app.include_router(createCollegeAdminByRootAdmin.router)
+app.include_router(createCollege.router)
 app.include_router(fetchCollegeDetails.router)
 app.include_router(userLoginRouter.router)
 app.include_router(createMess.router)
@@ -95,12 +117,15 @@ app.include_router(scannedCouponAnalyticsRouter.router)
 app.include_router(updateStudentDetails.router)
 app.include_router(fetchMealPreferenceAnalytics.router)
 app.include_router(createMessBill.router)
+
 app.include_router(AllStudentMessBill.router)
 app.include_router(studentDetailedMealConsumptionHistory.router)
 app.include_router(studentMessBillRouter.router)
 app.include_router(deleteMess.router)
-app.include_router(deleteStudents.router)
-app.include_router(deleteMessAdmin.router)
+app.include_router(createCollegeAdmin.router)
+app.include_router(deleteUsers.router)
+app.include_router(submitMealRatingRouter.router)
+app.include_router(fetchMealRatingAnalytics.router)
 
 
 

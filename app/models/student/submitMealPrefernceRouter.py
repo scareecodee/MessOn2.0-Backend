@@ -34,7 +34,6 @@ async def submit_meal_preference(
     current_user: User = Depends(get_current_role([UserRole.student])),
     db: AsyncSession = Depends(get_db)
 ):
-    # -------- GET STUDENT --------
     result = await db.execute(
         select(Student).filter(
             Student.user_id == current_user.id,
@@ -46,7 +45,6 @@ async def submit_meal_preference(
     if not student:
         raise HTTPException(404, "Student profile not found")
 
-    # -------- RESOLVE WEEK --------
     week_id, week_start = await resolve_week(
         db,
         menu_week,
@@ -54,7 +52,6 @@ async def submit_meal_preference(
         current_user.college_id
     )
 
-    # -------- FETCH WINDOW --------
     result = await db.execute(
         select(MealSubmissionWindow).filter(
             MealSubmissionWindow.mess_id == student.mess_id,
@@ -71,12 +68,10 @@ async def submit_meal_preference(
     if not (window.start_time <= now_utc <= window.end_time):
         raise HTTPException(400, "Submission window closed")
 
-    # -------- VALIDATE DATES BELONG TO WEEK --------
     for item in payload:
         if not (week_start <= item.date < week_start + timedelta(days=7)):
             raise HTTPException(400, f"Date {item.date} not in selected week")
 
-    # -------- UPSERT PREFERENCES --------
     for item in payload:
         stmt = insert(MealPreference).values(
             student_id=student.user_id,

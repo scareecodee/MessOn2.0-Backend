@@ -30,18 +30,5 @@ async def get_db():
         print("connecting to db")
         yield session
 
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         # Print BEFORE yielding to confirm connection started
-#         print("Checking DB connection...")
-#         yield db
-#     except Exception as e:
-#         print(f"Error connecting: {e}")
-#         raise e
-#     finally:
-#         # This runs when request is done
-#         print("Closing DB session")
-#         db.close()
 
 

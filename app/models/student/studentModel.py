@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Integer, ForeignKey, UniqueConstraint, DateTime, func
+from sqlalchemy import String, Integer, ForeignKey, UniqueConstraint, DateTime, func, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.user.userModel import User
@@ -45,4 +45,12 @@ class Student(Base):
     user: Mapped["User"] = relationship(back_populates="student", lazy="selectin")
     __table_args__ = (
         UniqueConstraint("user_id", name="unique_student_per_mess"),
+
+        Index(
+            "idx_students_pagination",
+            "roll_number",
+            "created_at",
+            "user_id"
+        ),
+
     )

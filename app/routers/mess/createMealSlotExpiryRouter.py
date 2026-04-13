@@ -1,5 +1,3 @@
-# app/api/routes/meal_slot_expiry.py
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select

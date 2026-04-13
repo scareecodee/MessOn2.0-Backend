@@ -1,4 +1,3 @@
-# app/services/scannedCouponAnalyticsService.py
 from typing import List
 
 from sqlalchemy import select, func, case

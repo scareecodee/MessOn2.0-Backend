@@ -21,10 +21,9 @@ router = APIRouter(
 async def create_mess_admin(
     mess_id: UUID,
     payload: UserCreate,
-    current_user: User = Depends(get_current_role(UserRole.college_admin)),
+    current_user: User = Depends(get_current_role([UserRole.college_admin])),
     db: AsyncSession = Depends(get_db)
 ):
-    # -------- GET MESS --------
     result = await db.execute(
         select(Mess).filter(
             Mess.id == mess_id,
@@ -36,13 +35,11 @@ async def create_mess_admin(
     if not mess:
         raise HTTPException(404, "Mess not found")
 
-    # -------- CHECK EXISTING USER --------
     result = await db.execute(
         select(User).filter(User.email == payload.email)
     )
     user = result.scalar_one_or_none()
 
-    #will have to check this if each email is unique then throw error on same email
 
     if user:
 
@@ -51,10 +48,10 @@ async def create_mess_admin(
                 status_code=400,
                 detail="Email already belongs to a student or college admin"
             )
+        user.name = payload.name
 
     else:
 
-        # create new mess admin user
         user = User(
             college_id=current_user.college_id,
             name=payload.name,
@@ -66,9 +63,6 @@ async def create_mess_admin(
         db.add(user)
         await db.flush()
 
-    # check if already assigned to this mess
-    # here i am assuming that one mess admin can belong to many mess but letting one clg admin can
-    # manage all messes
     result = await db.execute(
         select(MessAdmin).filter(
             MessAdmin.user_id == user.id,

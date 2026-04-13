@@ -32,13 +32,13 @@ async def get_meal_availability(
 
     if current_user.role == UserRole.mess_admin:
 
-        result = await db.execute(
+        mess_admins = await db.execute(
             select(MessAdmin).filter(
                 MessAdmin.user_id == current_user.id,
                 MessAdmin.college_id == current_user.college_id
             )
         )
-        mess_admin = result.scalar_one_or_none()
+        mess_admin = mess_admins.scalar_one_or_none()
 
         if not mess_admin:
             raise HTTPException(status_code=404, detail="Mess admin profile not found")

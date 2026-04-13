@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, DateTime, Boolean, Enum, ForeignKey,func
+from sqlalchemy import String, DateTime, Boolean, Enum, ForeignKey, func, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
@@ -64,6 +64,15 @@ class User(Base):
         back_populates="user",
         uselist=False,
         lazy="selectin"
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_users_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"}
+        ),
     )
 
     # college: Mapped["College"] = relationship(back_populates="users")
