@@ -17,7 +17,7 @@ router = APIRouter(
 
 @router.get("/messes", response_model=List[MessResponse])
 async def list_messes(
-    current_user: User = Depends(get_current_role([UserRole.college_admin])),
+    current_user: User = Depends(get_current_role([UserRole.college_admin,UserRole.root_admin])),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(

@@ -54,28 +54,27 @@ async def get_token_payload(
         college_id = payload.get("college_id")
         session_id = payload.get("session_id")
 
-        if not user_id or not role or not session_id:
+        if not user_id or not role:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload"
             )
 
         if role == "root_admin":
-            pass
+            return payload
 
-        else:
-            if not college_id:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="College ID missing in token"
-                )
+        if not session_id or not college_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload"
+            )
+
+        await verify_session(session_id, db)
+
+        return payload
 
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
         )
-
-    await verify_session(session_id, db)
-
-    return payload
