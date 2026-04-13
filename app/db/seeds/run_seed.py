@@ -1,5 +1,5 @@
 from app.db.session import SessionLocal
-from app.db.seeds.seed_super_admin import seed_super_admins
+from app.db.seeds.seed_root_admin import seed_super_admins
 
 def run():
     db = SessionLocal()

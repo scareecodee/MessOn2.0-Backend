@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.session import get_db
 from app.db.models import init_db
 from app.tasks.cronJobs import start_scheduler
-from app.db.seeds.seed_super_admin import seed_root_admins
+from app.db.seeds.seed_root_admin import seed_root_admins
 from app.db.seeds.seed_clg_and_clgAdmin import seed_college_and_admin
 
 from app.routers.rootAdmin import (

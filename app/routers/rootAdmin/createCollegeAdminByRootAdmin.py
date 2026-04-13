@@ -19,7 +19,7 @@ router = APIRouter(
 @router.post("/root/college-admins", response_model=UserResponse)
 async def create_college_admin(
     payload: CollegeAdminCreate,
-    root = Depends(get_current_root_admin),
+    root_user = Depends(get_current_root_admin),
     db: AsyncSession = Depends(get_db)
 ):
 
@@ -37,15 +37,15 @@ async def create_college_admin(
     if not payload.email.endswith(college.domain):
         raise HTTPException(400, "Invalid college domain")
 
-    result = await db.execute(
+    admins = await db.execute(
         select(User).filter(
             User.email == payload.email,
             User.college_id == payload.college_id
         )
     )
-    existing = result.scalar_one_or_none()
+    existing_admins = admins.scalar_one_or_none()
 
-    if existing:
+    if existing_admins:
         raise HTTPException(400, "User already exists")
 
     user = User(

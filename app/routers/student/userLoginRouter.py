@@ -33,7 +33,6 @@ async def login_with_google(
     db: AsyncSession = Depends(get_db)
 ):
 
-
     payload = await asyncio.to_thread(verify_google_token, data.id_token)
     if not payload:
         raise HTTPException(401, "Invalid Google token")
