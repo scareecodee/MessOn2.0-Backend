@@ -33,9 +33,9 @@ async def create_college_admin(
 
     if not college.status:
         raise HTTPException(400, "College is inactive")
-
-    if not payload.email.endswith(college.domain):
-        raise HTTPException(400, "Invalid college domain")
+    #
+    # if not payload.email.endswith(college.domain):
+    #     raise HTTPException(400, "Invalid college domain")
 
     admins = await db.execute(
         select(User).filter(
