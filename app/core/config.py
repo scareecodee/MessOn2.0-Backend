@@ -9,17 +9,12 @@ class Settings(BaseSettings):
     database_username: str
     database_password: str
     database_name: str
+    database_url: str
     access_token_secret: str
-    refresh_token_secret: str
     algorithm: str
     access_token_expire_days: int
-    refresh_token_expire_days: int
     google_client_id:str
-    breakfast_expire:str
-    lunch_expire:str
-    dinner_expire:str
     coupon_secret_key:str
-    max_notifications:int
     max_csv_file_size:int
     csv_upload_timelimit:int
     cursor_secret:str
