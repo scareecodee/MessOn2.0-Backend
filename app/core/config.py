@@ -2,7 +2,6 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
-
 class Settings(BaseSettings):
     database_hostname: str
     database_port: int
