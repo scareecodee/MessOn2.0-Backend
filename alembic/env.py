@@ -26,6 +26,7 @@ config.set_main_option(
     "sqlalchemy.url",
      settings.database_url,
 )
+print(settings.database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
