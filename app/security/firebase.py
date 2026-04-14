@@ -1,22 +1,15 @@
 import os
+import json
 import firebase_admin
 from firebase_admin import credentials, auth
 
-# get absolute path to app/ directory
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+firebase_config = os.getenv("FIREBASE_CONFIG")
 
-# build absolute path to the json file
-SERVICE_ACCOUNT_PATH = os.path.join(
-    BASE_DIR,
-    "security",
-    "firebase_service_account.json"
-)
-
-# initialize firebase admin only once
-
-if not firebase_admin._apps:
-    cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+if firebase_config:
+    cred = credentials.Certificate(json.loads(firebase_config))
     firebase_admin.initialize_app(cred)
+else:
+    print("Firebase config not found")
 
 
 def verify_firebase_token(id_token: str):
