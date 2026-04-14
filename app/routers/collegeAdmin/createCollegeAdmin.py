@@ -44,10 +44,10 @@ async def create_mess_admin(
     if not college:
         return HTTPException(status_code=400, detail="College does not exist")
 
-    domain = college.domain
-
-    if not payload.email.endswith(domain):
-        return HTTPException(status_code=400, detail="Invalid college domain !")
+    # domain = college.domain
+    #
+    # if not payload.email.endswith(domain):
+    #     return HTTPException(status_code=400, detail="Invalid college domain !")
 
     user = User(
             college_id=current_user.college_id,
