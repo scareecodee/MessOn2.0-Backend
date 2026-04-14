@@ -296,8 +296,16 @@ WHERE
         OR COALESCE(mdp.is_compulsory, false) = true
     )
 
+
 ON CONFLICT (student_id, date, meal_slot)
-DO NOTHING;
+DO UPDATE SET
+    meal_type = EXCLUDED.meal_type,
+    week_id   = EXCLUDED.week_id,
+    mess_id   = EXCLUDED.mess_id,
+    college_id = EXCLUDED.college_id
+WHERE
+    coupons.date >= CURRENT_DATE
+    AND coupons.is_scanned = false;
 """
 
 
