@@ -24,7 +24,6 @@ router = APIRouter(
     tags=["Generate Coupons Manually"]
 )
 
-
 @router.post("/generate-manually")
 async def generate_coupons_manual(
     current_user: User = Depends(get_current_role([UserRole.mess_admin])),
@@ -58,18 +57,18 @@ async def generate_coupons_manual(
 
     if not week:
         raise HTTPException(404, "No active week found")
-
-    if week.coupon_generation_status == "generated":
-        return {
-            "status": "already_generated",
-            "week_id": str(week.id)
-        }
-
-    if week.coupon_generation_status == "skipped":
-        return {
-            "status": "skipped_week",
-            "reason": "mess closed entire week"
-        }
+    #
+    # if week.coupon_generation_status == "generated":
+    #     return {
+    #         "status": "already_generated",
+    #         "week_id": str(week.id)
+    #     }
+    #
+    # if week.coupon_generation_status == "skipped":
+    #     return {
+    #         "status": "skipped_week",
+    #         "reason": "mess closed entire week"
+    #     }
 
     try:
         async with AsyncSessionLocal() as db:
