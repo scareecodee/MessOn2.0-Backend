@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from app.db.session import engine
 from app.db.base import Base
 
@@ -21,5 +23,7 @@ from app.models.mess.ratingAnalyticsModel import RatingAnalytics
 async def init_db():
     async with engine.begin() as conn:
         print(Base.metadata.tables.keys())
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
         # print("init db")
         await conn.run_sync(Base.metadata.create_all)
