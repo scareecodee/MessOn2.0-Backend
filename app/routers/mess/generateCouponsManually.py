@@ -71,8 +71,8 @@ async def generate_coupons_manual(
     #     }
 
     try:
-        # async with AsyncSessionLocal() as db:
-        await generate_coupons_for_week(db, mess_id, college_id)
+        async with AsyncSessionLocal() as db:
+            await generate_coupons_for_week(db, mess_id, college_id)
     except Exception as e:
         raise HTTPException(500, f"Generation failed: {str(e)}")
 
