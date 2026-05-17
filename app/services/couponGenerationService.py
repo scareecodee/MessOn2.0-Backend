@@ -193,18 +193,22 @@
 #
 #         raise e
 
-
-# =========================================================
-# COUPON GENERATION SERVICE
-# =========================================================
+=====================================================
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import update, text
+from sqlalchemy import (
+    update,
+    text,
+    select,
+    func
+)
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.mess.messWeekModel import MessWeek
+from app.models.mess.couponModel import Coupon
 
 from app.services.getLatestDayPolicy import (
     get_latest_policy_week
@@ -222,7 +226,10 @@ from app.utils.menuWeek import MenuWeek
 
 IST = ZoneInfo("Asia/Kolkata")
 
-VALID_START_STATES = ["pending", "failed"]
+VALID_START_STATES = [
+    "pending",
+    "failed"
+]
 
 
 SQL_GENERATE_COUPONS = """
@@ -236,6 +243,7 @@ INSERT INTO coupons (
     meal_slot,
     meal_type
 )
+
 SELECT
     gen_random_uuid(),
     s.user_id,
@@ -247,7 +255,11 @@ SELECT
 
     COALESCE(
         mp.meal_type,
-        'veg'::meal_type_enum
+        CASE
+            WHEN COALESCE(mdp.is_compulsory, false)
+            THEN 'veg'::meal_type_enum
+            ELSE NULL
+        END
     ) AS meal_type
 
 FROM students s
@@ -274,6 +286,11 @@ LEFT JOIN meal_preferences mp
     AND mp.date = d.date
     AND mp.meal_slot = m.meal_slot
 
+LEFT JOIN mess_day_policies mdp
+    ON mdp.mess_id = :mess_id
+    AND mdp.week_id = :policy_week_id
+    AND mdp.day = m.day
+
 LEFT JOIN mess_closures mc
     ON mc.mess_id = :mess_id
     AND mc.college_id = :college_id
@@ -283,6 +300,11 @@ WHERE
     s.mess_id = :mess_id
     AND s.college_id = :college_id
     AND mc.id IS NULL
+
+    AND (
+        mp.meal_type IS NOT NULL
+        OR COALESCE(mdp.is_compulsory, false) = true
+    )
 
 ON CONFLICT (student_id, date, meal_slot)
 
@@ -294,7 +316,7 @@ DO UPDATE SET
 
 WHERE
     coupons.date >= CURRENT_DATE
-    AND coupons.is_scanned = false;
+    AND coupons.scanned_at IS NULL;
 """
 
 
@@ -318,6 +340,32 @@ async def generate_coupons_for_week(
     week_end = week.end_date
 
 
+    coupon_exists_stmt = (
+        select(Coupon.id)
+        .where(
+            Coupon.week_id == week_id
+        )
+        .limit(1)
+    )
+
+    coupon_exists_result = await db.execute(
+        coupon_exists_stmt
+    )
+
+    existing_coupon = (
+        coupon_exists_result.scalar_one_or_none()
+    )
+
+    if existing_coupon:
+
+        print(
+            f"Coupons already exist for week {week_id}"
+        )
+
+        return {
+            "status": "already_generated"
+        }
+
     claim_stmt = (
         update(MessWeek)
         .where(
@@ -333,16 +381,22 @@ async def generate_coupons_for_week(
         .returning(MessWeek.id)
     )
 
-    result = await db.execute(claim_stmt)
+    claim_result = await db.execute(
+        claim_stmt
+    )
 
-    claimed = result.first()
+    claimed = claim_result.first()
 
     if not claimed:
 
         await db.rollback()
 
+        print(
+            f"Coupon generation lock denied for week {week_id}"
+        )
+
         return {
-            "status": "already_generating_or_generated"
+            "status": "already_generating"
         }
 
     try:
@@ -360,6 +414,7 @@ async def generate_coupons_for_week(
             week_start
         )
 
+
         if not menu_week_id:
 
             await db.execute(
@@ -372,9 +427,33 @@ async def generate_coupons_for_week(
 
             await db.commit()
 
+            print(
+                f"No valid menu found for week {week_id}"
+            )
+
             return {
                 "status": "menu_not_configured"
             }
+
+
+        before_count_stmt = (
+            select(func.count(Coupon.id))
+            .where(
+                Coupon.week_id == week_id
+            )
+        )
+
+        before_count_result = await db.execute(
+            before_count_stmt
+        )
+
+        before_count = (
+                before_count_result.scalar() or 0
+        )
+
+        print(
+            f"Coupons before generation: {before_count}"
+        )
 
 
         generation_result = await db.execute(
@@ -391,9 +470,40 @@ async def generate_coupons_for_week(
         )
 
         print(
-            "Coupons affected:",
+            "Rows affected during generation:",
             generation_result.rowcount
         )
+
+
+        after_count_stmt = (
+            select(func.count(Coupon.id))
+            .where(
+                Coupon.week_id == week_id
+            )
+        )
+
+        after_count_result = await db.execute(
+            after_count_stmt
+        )
+
+        after_count = (
+                after_count_result.scalar() or 0
+        )
+
+        generated_now = after_count - before_count
+
+
+
+        print(
+            f"New coupons generated: {generated_now}"
+        )
+
+
+        if generated_now <= 0:
+            raise Exception(
+                "Coupon generation failed. No new coupons inserted."
+            )
+
 
 
         await db.execute(
@@ -407,14 +517,19 @@ async def generate_coupons_for_week(
         await db.commit()
 
         return {
-            "status": "generated"
+            "status": "generated",
+            "generated_coupon_count": generated_now
         }
 
     except Exception as e:
 
-        print("COUPON GENERATION ERROR:", str(e))
+        print(
+            "COUPON GENERATION FAILED:",
+            str(e)
+        )
 
         await db.rollback()
+
 
 
         await db.execute(
