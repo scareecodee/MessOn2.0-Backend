@@ -35,8 +35,8 @@ class MealSlotExpiryRequest(BaseModel):
 
 class MealSlotExpiryResponse(BaseModel):
     meal_slot: MealSlot
-    start_time: time
-    end_time: time
+    start_time: time | None = None
+    end_time: time | None = None
 
     class Config:
         from_attributes = True
