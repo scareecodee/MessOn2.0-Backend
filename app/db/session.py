@@ -7,14 +7,14 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 settings = get_settings()
 
-# SQLALCHEMY_DATABASE_URL = (
-#     f"postgresql+asyncpg://{settings.database_username}:"
-#     f"{settings.database_password}@"
-#     f"{settings.database_hostname}:"
-#     f"{settings.database_port}/"
-#     f"{settings.database_name}"
-# )
-SQLALCHEMY_DATABASE_URL=settings.database_url
+SQLALCHEMY_DATABASE_URL = (
+    f"postgresql+asyncpg://{settings.database_username}:"
+    f"{settings.database_password}@"
+    f"{settings.database_hostname}:"
+    f"{settings.database_port}/"
+    f"{settings.database_name}"
+)
+# SQLALCHEMY_DATABASE_URL=settings.database_url
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,

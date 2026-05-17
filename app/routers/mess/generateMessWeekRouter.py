@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -16,9 +18,12 @@ from app.services.messWeekGenerationService import generate_weeks_for_mess
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from app.models.mess.messWeekModel import MessWeek
+
 IST = ZoneInfo("Asia/Kolkata")
 
-mess_open_date = datetime.now(IST).date()
+
+today=datetime.now(IST).date()
 router = APIRouter(prefix="/admin", tags=["Generate Mess Weeks"])
 
 @router.post("/generate-weeks")
@@ -42,11 +47,24 @@ async def generate_weeks_manual(
     )
     mess = result.scalar_one_or_none()
 
-    await generate_weeks_for_mess(
-        db=db,
-        mess_id=mess.id,
-        college_id=mess.college_id,
-        mess_open_date=mess_open_date
+    weeks = (
+        await db.execute(
+            select(MessWeek).where(
+                MessWeek.mess_id == mess.mess_id,
+                MessWeek.start_date <= today,
+                MessWeek.end_date >= today
+            )
+        )
     )
+    week: Optional[MessWeek] = weeks.scalar_one_or_none()
+
+    if not week:
+        await generate_weeks_for_mess(
+            db=db,
+            mess_id=mess.id,
+            college_id=mess.college_id,
+            # mess_open_date=today
+        )
+
 
     return {"message": "Weeks generated successfully"}
