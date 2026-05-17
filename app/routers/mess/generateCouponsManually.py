@@ -98,7 +98,6 @@
 #     }
 
 
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -106,7 +105,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.mess.messAdmin import MessAdmin
-from app.models.mess.messWeekModel import MessWeek
 from app.models.user.userModel import User
 
 from app.security.dependencies.getCurrentRole import get_current_role
@@ -148,7 +146,6 @@ async def generate_coupons_manual(
     mess_id = mess_admin.mess_id
     college_id = current_user.college_id
 
-    # FIXED → assign returned week
     week = await resolve_week(
         db=db,
         menu_week=MenuWeek.currentWeek,
@@ -158,7 +155,6 @@ async def generate_coupons_manual(
 
     try:
 
-        # FIXED → use SAME db session
         await generate_coupons_for_week(
             db=db,
             mess_id=mess_id,

@@ -29,21 +29,31 @@ router = APIRouter(
     tags=["Submission Window"]
 )
 
-@router.get("/submission-window/template", response_model=SubmissionWindowTemplateResponse)
+@router.get(
+    "/submission-window/template",
+    response_model=SubmissionWindowTemplateResponse
+)
 async def get_submission_window_template(
-    current_user: User = Depends(get_current_role([UserRole.mess_admin])),
+    current_user: User = Depends(
+        get_current_role([UserRole.mess_admin])
+    ),
     db: AsyncSession = Depends(get_db)
 ):
+
     result = await db.execute(
-        select(MessAdmin).filter(
+        select(MessAdmin).where(
             MessAdmin.user_id == current_user.id,
             MessAdmin.college_id == current_user.college_id
         )
     )
+
     mess_admin = result.scalar_one_or_none()
 
     if not mess_admin:
-        raise HTTPException(status_code=404, detail="Mess admin not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Mess admin not found"
+        )
 
     result = await db.execute(
         select(SubmissionWindowTemplate).where(
@@ -51,55 +61,67 @@ async def get_submission_window_template(
             SubmissionWindowTemplate.college_id == current_user.college_id
         )
     )
+
     template = result.scalar_one_or_none()
 
     if not template:
-        return HTTPException(status_code=404, detail="Template admin not found")
+
+        return SubmissionWindowTemplateResponse(
+            start_day=None,
+            start_time=None,
+            end_day=None,
+            end_time=None
+        )
 
     return template
 
 
-@router.get("/submission-window/{menu_week}", response_model=SubmissionWindowResponse)
+@router.get(
+    "/submission-window/{menu_week}",
+    response_model=SubmissionWindowResponse
+)
 async def get_submission_window(
     menu_week: MenuWeek,
-    current_user: User = Depends(get_current_role([UserRole.mess_admin])),
+    current_user: User = Depends(
+        get_current_role([UserRole.mess_admin])
+    ),
     db: AsyncSession = Depends(get_db)
 ):
 
     result = await db.execute(
-        select(MessAdmin).filter(
+        select(MessAdmin).where(
             MessAdmin.user_id == current_user.id,
             MessAdmin.college_id == current_user.college_id
         )
     )
+
     mess_admin = result.scalar_one_or_none()
 
     if not mess_admin:
-        raise HTTPException(404, "Mess admin profile not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Mess admin profile not found"
+        )
 
     week = await resolve_week(
-        db,
-        menu_week,
-        mess_admin.mess_id,
-        current_user.college_id
+        db=db,
+        menu_week=menu_week,
+        mess_id=mess_admin.mess_id,
+        college_id=current_user.college_id
     )
 
     window = await get_or_create_submission_window(
-        db,
-        mess_admin.mess_id,
-        current_user.college_id,
-        week
+        db=db,
+        mess_id=mess_admin.mess_id,
+        college_id=current_user.college_id,
+        week=week
     )
 
-    # result = await db.execute(
-    #     select(MealSubmissionWindow).filter(
-    #         MealSubmissionWindow.mess_id == mess_admin.mess_id,
-    #         MealSubmissionWindow.week_id == week.id
-    #     )
-    # )
-    # window = result.scalar_one_or_none()
-
-    if not window:
+    if (
+        not window
+        or not window.start_time
+        or not window.end_time
+    ):
         return SubmissionWindowResponse(
             start_time=None,
             end_time=None,
@@ -108,17 +130,12 @@ async def get_submission_window(
 
     now_utc = datetime.now(timezone.utc)
 
-    if window.start_time < now_utc < window.end_time:
-        return SubmissionWindowResponse(
-            start_time=window.start_time.astimezone(IST),
-            end_time=window.end_time.astimezone(IST),
-            is_active=True
-        )
+    is_active = (
+        window.start_time <= now_utc <= window.end_time
+    )
 
     return SubmissionWindowResponse(
         start_time=window.start_time.astimezone(IST),
         end_time=window.end_time.astimezone(IST),
-        is_active=False
+        is_active=is_active
     )
-
-

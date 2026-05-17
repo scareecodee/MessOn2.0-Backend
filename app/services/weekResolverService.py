@@ -130,7 +130,6 @@ async def resolve_week(
 
     week = result.scalar_one_or_none()
 
-    # AUTO GENERATE IF MISSING
     if week is None:
 
         await generate_weeks_for_mess(
@@ -139,7 +138,6 @@ async def resolve_week(
             college_id=college_id,
         )
 
-        # REFETCH (CRITICAL FIX)
         result = await db.execute(stmt)
 
         week = result.scalar_one_or_none()

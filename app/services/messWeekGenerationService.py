@@ -120,10 +120,7 @@ async def generate_weeks_for_mess(
     college_id,
     months_ahead: int = 1
 ):
-    """
-    Generates current + future calendar weeks.
-    Weeks are ALWAYS Monday → Sunday.
-    """
+
 
     today = datetime.now(IST).date()
 

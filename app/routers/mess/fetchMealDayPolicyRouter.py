@@ -182,7 +182,7 @@ async def get_day_policy(
         response.append(
             DayPolicyResponse(
                 day=day,
-                is_compulsory=policy_map.get(day, False)
+                is_compulsory=policy_map.get(day, True)
             )
         )
 

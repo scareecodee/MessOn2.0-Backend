@@ -1,66 +1,86 @@
-from datetime import timezone, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from zoneinfo import ZoneInfo
+from typing import List
 
 from app.db.session import get_db
+
 from app.models.user.userModel import User
 from app.models.mess.messAdmin import MessAdmin
-from app.models.mess.mealSubmissionWindowModel import MealSubmissionWindow
-
-from app.schemas.mess.submissionWindowSchema import SubmissionWindowResponse
-from app.security.dependencies.getCurrentRole import get_current_role
-from app.utils.userRole import UserRole
-from app.utils.menuWeek import MenuWeek
-
-from app.services.weekResolverService import resolve_week
-from app.services.submissionWindowCreationService import get_or_create_submission_window
 from app.models.mess.mealSlotExpiryModel import MealSlotExpiry
-from app.schemas.mess.mealSlotExpirySchema import MealSlotExpiryResponse
 
-IST = ZoneInfo("Asia/Kolkata")
+from app.schemas.mess.mealSlotExpirySchema import (
+    MealSlotExpiryResponse
+)
+
+from app.security.dependencies.getCurrentRole import (
+    get_current_role
+)
+
+from app.utils.userRole import UserRole
+from app.utils.mealSlot import MealSlot
 
 router = APIRouter(
     prefix="/fetch/mess",
     tags=["Meal Slot Expiry"]
 )
 
-@router.get("/meal-slot-expiry", response_model=list[MealSlotExpiryResponse])
-async def get_submission_window(
-    current_user: User = Depends(get_current_role([UserRole.mess_admin])),
+ALL_SLOTS = list(MealSlot)
+
+
+@router.get(
+    "/meal-slot-expiry",
+    response_model=List[MealSlotExpiryResponse]
+)
+async def get_meal_slot_expiry(
+    current_user: User = Depends(
+        get_current_role([UserRole.mess_admin])
+    ),
     db: AsyncSession = Depends(get_db)
 ):
-    user = await db.execute(
-        select(MessAdmin).filter(
+
+    result = await db.execute(
+        select(MessAdmin).where(
             MessAdmin.user_id == current_user.id,
             MessAdmin.college_id == current_user.college_id
         )
     )
-    mess_admin = user.scalar_one_or_none()
 
-    mess_id = mess_admin.mess_id
+    mess_admin = result.scalar_one_or_none()
 
-    meal_slot_result = await db.execute(
-        select(MealSlotExpiry).filter(
-            MealSlotExpiry.mess_id == mess_id,
+    if not mess_admin:
+        raise HTTPException(
+            status_code=404,
+            detail="Mess admin not found"
+        )
+
+    result = await db.execute(
+        select(MealSlotExpiry).where(
+            MealSlotExpiry.mess_id == mess_admin.mess_id,
             MealSlotExpiry.college_id == current_user.college_id
         )
     )
 
-    meal_slots = meal_slot_result.scalars().all()
+    meal_slots = result.scalars().all()
 
-    if not meal_slots:
-        raise HTTPException(404, "Meal Slot not found")
-
-    return [
-        MealSlotExpiryResponse(
-            meal_slot=slot.meal_slot,
-            start_time=slot.start_time,
-            end_time=slot.end_time
-        )
+    slot_map = {
+        slot.meal_slot: slot
         for slot in meal_slots
-    ]
+    }
 
+    response = []
 
+    for slot in ALL_SLOTS:
+
+        expiry = slot_map.get(slot)
+
+        response.append(
+            MealSlotExpiryResponse(
+                meal_slot=slot,
+                start_time=expiry.start_time if expiry else None,
+                end_time=expiry.end_time if expiry else None
+            )
+        )
+
+    return response

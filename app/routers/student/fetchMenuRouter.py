@@ -266,12 +266,14 @@ async def get_week_menu(
                     (day, slot, meal_type)
                 )
 
+                dishes = menu.dishes if menu is not None else None
+
                 response.append(
                     MenuResponse(
                         day=day,
                         meal_slot=slot,
                         meal_type=meal_type,
-                        dishes=menu.dishes if menu else None
+                        dishes=dishes
                     )
                 )
 
