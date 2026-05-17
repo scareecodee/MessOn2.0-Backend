@@ -104,12 +104,21 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+
 from app.models.mess.messAdmin import MessAdmin
 from app.models.user.userModel import User
 
-from app.security.dependencies.getCurrentRole import get_current_role
-from app.services.couponGenerationService import generate_coupons_for_week
-from app.services.weekResolverService import resolve_week
+from app.security.dependencies.getCurrentRole import (
+    get_current_role
+)
+
+from app.services.couponGenerationService import (
+    generate_coupons_for_week
+)
+
+from app.services.weekResolverService import (
+    resolve_week
+)
 
 from app.utils.menuWeek import MenuWeek
 from app.utils.userRole import UserRole
@@ -127,6 +136,7 @@ async def generate_coupons_manual(
     ),
     db: AsyncSession = Depends(get_db)
 ):
+
 
     result = await db.execute(
         select(MessAdmin).where(
@@ -146,6 +156,7 @@ async def generate_coupons_manual(
     mess_id = mess_admin.mess_id
     college_id = current_user.college_id
 
+
     week = await resolve_week(
         db=db,
         menu_week=MenuWeek.currentWeek,
@@ -153,9 +164,10 @@ async def generate_coupons_manual(
         college_id=college_id
     )
 
+
     try:
 
-        await generate_coupons_for_week(
+        result = await generate_coupons_for_week(
             db=db,
             mess_id=mess_id,
             college_id=college_id
@@ -163,12 +175,14 @@ async def generate_coupons_manual(
 
     except Exception as e:
 
+        print("MANUAL GENERATION ERROR:", str(e))
+
         raise HTTPException(
             status_code=500,
-            detail=f"Generation failed: {str(e)}"
+            detail="Coupon generation failed"
         )
 
     return {
-        "status": "generation_triggered",
-        "week_id": str(week.id)
+        "week_id": str(week.id),
+        "result": result
     }
