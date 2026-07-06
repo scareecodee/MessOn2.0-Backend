@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid import UUID
 from typing import Optional
-
+from fastapi import HTTPException,status    
 from app.models.mess.couponModel import Coupon
 from app.services.couponPayloadService import build_coupon_payload
 from app.schemas.mess.couponPayloadSchema import CouponPayload
@@ -35,7 +35,7 @@ async def fetch_coupon_by_meal(
     coupon = result.scalar_one_or_none()
 
     if not coupon:
-        return None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Coupon not found")
 
     return await build_coupon_payload(
         db=db,

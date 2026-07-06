@@ -73,7 +73,6 @@ async def upsert_meal_preference(
         raise HTTPException(400, "Submission window closed")
 
 
-
     rows = []
 
     for item in payload:
@@ -90,6 +89,7 @@ async def upsert_meal_preference(
             "student_id": student.user_id,
             "college_id": current_user.college_id,
             "mess_id": student.mess_id,
+            "week_id" : week.id,
             "date": target_date,
             "meal_slot": item.meal_slot,
             "meal_type": item.meal_type

@@ -5,4 +5,6 @@ venv/
 .env
 .env.*
 .idea/
+
 app/security/firebase_service_account.json
+.vscode/

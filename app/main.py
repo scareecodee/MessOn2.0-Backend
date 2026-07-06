@@ -40,7 +40,7 @@ from app.routers.mess import (
 )
 from app.routers.student import (
      fetchMenuRouter,mealAvailabilityRouter,fetchMealPreferenceRouter,userLoginRouter,submitMealPrefernceRouter,
-     fetchCouponRouter,submitMealRatingRouter
+     fetchCouponRouter,submitMealRatingRouter,fetchComplaintsRouter,createComplaintRouter,setComplaintVoteRouter
 
 )
 
@@ -126,7 +126,9 @@ app.include_router(createCollegeAdmin.router)
 app.include_router(deleteUsers.router)
 app.include_router(submitMealRatingRouter.router)
 app.include_router(fetchMealRatingAnalytics.router)
-
+app.include_router(fetchComplaintsRouter.router)
+app.include_router(createComplaintRouter.router)
+app.include_router(setComplaintVoteRouter.router)
 
 
 

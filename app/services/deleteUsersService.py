@@ -12,7 +12,7 @@ import asyncio
 MAX_RETRIES = 3
 
 
-async def delete_users(payload, db, current_user):
+async def delete_users_service(payload, db, current_user):
 
     if payload.role == UserRole.student:
 

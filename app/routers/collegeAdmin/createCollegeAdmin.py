@@ -22,33 +22,23 @@ async def create_mess_admin(
     current_user: User = Depends(get_current_role([UserRole.college_admin])),
     db: AsyncSession = Depends(get_db)
 ):
+    
+    # college_domain = current_user.email.rsplit("@",1)[1]
+    # payload_domain = payload.email.rsplit("@",1)[1]
+
+    # if payload_domain != college_domain:
+    #     return HTTPException(status_code=404,detail = "College domain name does not match")
 
     result = await db.execute(
         select(User).filter(
             User.email == payload.email,
             User.college_id == current_user.college_id)
     )
-    user = result.scalar_one_or_none()
+    user =  result.scalar_one_or_none()
 
     if user :
-        return HTTPException(status_code=400, detail="User already exists")
-
-    colleges = await db.execute(
-        select(College).filter(
-            College.id == current_user.college_id,
-        )
-    )
-
-    college = colleges.scalar_one_or_none()
-
-    if not college:
-        return HTTPException(status_code=400, detail="College does not exist")
-
-    # domain = college.domain
-    #
-    # if not payload.email.endswith(domain):
-    #     return HTTPException(status_code=400, detail="Invalid college domain !")
-
+        raise HTTPException(status_code=409, detail="User already exists")
+    
     user = User(
             college_id=current_user.college_id,
             name=payload.name,
@@ -58,9 +48,10 @@ async def create_mess_admin(
         )
 
     db.add(user)
-
+    await db.flush()
+ 
     college_admin = CollegeAdmin(
-        id=user.college_id,
+        id=user.id,
         college_id=current_user.college_id,
     )
     db.add(college_admin)

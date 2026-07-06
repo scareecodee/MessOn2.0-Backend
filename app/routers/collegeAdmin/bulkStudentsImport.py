@@ -140,7 +140,7 @@ async def preview_csv(
 async def confirm_import(
     mess_id: UUID,
     import_token: uuid.UUID,
-    current_admin: User = Depends(get_current_role(UserRole.college_admin)),
+    current_admin: User = Depends(get_current_role([UserRole.college_admin])),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(

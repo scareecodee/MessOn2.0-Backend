@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from datetime import date
 from uuid import UUID
 
@@ -9,7 +9,7 @@ from app.utils.weekDays import WeekDays
 
 class RatingRequest(BaseModel):
     meal_slot: MealSlot
-    rating: int
+    rating: int = Field(ge=1, le=5)
 
 class RatingAnalyticsResponse(BaseModel):
     date: date

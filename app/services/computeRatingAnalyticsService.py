@@ -44,7 +44,7 @@ async def get_rating_stats(
     result = await db.execute(stmt)
     rows = result.all()
 
-    # 🔥 map: date → slot → row
+    
     data_map = {}
 
     for row in rows:
@@ -68,7 +68,7 @@ async def get_rating_stats(
 
             row = slot_map.get(slot)
 
-            # 🔥 compute averages (no DB work here)
+           
             veg_avg = (
                 row.veg_sum / row.veg_count
                 if row and row.veg_count else None

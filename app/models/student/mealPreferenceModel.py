@@ -39,12 +39,12 @@ class MealPreference(Base):
     )
 
     # date-based — replaces week_id + day
-    # week_id: Mapped[uuid.UUID] = mapped_column(
-    #     UUID(as_uuid=True),
-    #     ForeignKey("mess_weeks.id", ondelete="CASCADE"),
-    #     nullable=False,
-    #     index=True
-    # )
+    week_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("mess_weeks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
     # day: Mapped[WeekDays] = mapped_column(weekday_enum, nullable=False)
 
     date: Mapped[DateType] = mapped_column(

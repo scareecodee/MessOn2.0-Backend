@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 
 class UserResponse(BaseModel):
-    id: UUID
+    # id: UUID
     email: EmailStr
     name: str
     is_active: bool

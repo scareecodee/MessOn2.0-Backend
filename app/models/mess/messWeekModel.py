@@ -4,6 +4,7 @@ from sqlalchemy import Date, ForeignKey, UniqueConstraint, CheckConstraint, Inde
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
+from app.utils.couponGenerationStatus import CouponGenerationStatus
 
 
 class MessWeek(Base):

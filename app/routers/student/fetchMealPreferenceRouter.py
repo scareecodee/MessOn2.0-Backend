@@ -293,8 +293,8 @@ async def get_meal_preference(
                     veg_dishes=veg_dish,
                     nonVeg_dishes=nonveg_dish,
 
-                    veg_available=veg_dish is not None,
-                    nonVeg_available=nonveg_dish is not None,
+                   veg_available=bool(veg_dish and veg_dish.strip()),
+                   nonVeg_available=bool(nonveg_dish and nonveg_dish.strip()),
 
                     is_compulsory=policy_map.get(day, False)
                 )
