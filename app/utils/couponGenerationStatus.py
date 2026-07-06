@@ -1,8 +1,7 @@
-from sqlalchemy import Enum
+from enum import Enum
 
-
-class GenerationStatus(str, Enum):
+class CouponGenerationStatus(str, Enum):
     pending = "pending"
     generated = "generated"
-    skipped = "skipped"
+    generating = "generating"
     failed = "failed"

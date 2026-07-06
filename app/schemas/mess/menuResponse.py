@@ -12,8 +12,7 @@ class MenuResponse(BaseModel):
     day: WeekDays
     meal_slot: MealSlot
     meal_type: MealType
-    dishes: str
-    # menu_week: MenuWeek
+    dishes: str | None = None
 
     class Config:
         from_attributes = True

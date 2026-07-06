@@ -36,22 +36,25 @@ async def create_mess_admin(
         raise HTTPException(404, "Mess not found")
 
     result = await db.execute(
-        select(User).filter(User.email == payload.email)
-    )
+        select(User).filter(
+            User.email == payload.email,
+             User.college_id == current_user.college_id)
+             )
+    
     user = result.scalar_one_or_none()
 
+    if user :
+        raise HTTPException(status_code=409, detail="User already exists")
 
-    if user:
-
-        if user.role in [UserRole.student, UserRole.college_admin]:
-            raise HTTPException(
-                status_code=400,
-                detail="Email already belongs to a student or college admin"
-            )
-        user.name = payload.name
+    # if user:
+    #     if user.role in [UserRole.student, UserRole.college_admin]:
+    #         raise HTTPException(
+    #             status_code=400,
+    #             detail="Email already belongs to a student or college admin"
+    #         )
+    #     user.name = payload.name
 
     else:
-
         user = User(
             college_id=current_user.college_id,
             name=payload.name,

@@ -23,7 +23,7 @@ async def create_students(
     mess_id: UUID,
     payload: List[StudentCreate],
     response: Response,
-    current_user: User = Depends(get_current_role(UserRole.college_admin)),
+    current_user: User = Depends(get_current_role([UserRole.college_admin])),
     db: AsyncSession = Depends(get_db),
 ):
     conflicts: List[AddManuallyConflictResponse] = []
@@ -39,12 +39,13 @@ async def create_students(
     if not mess:
         raise HTTPException(404, "Mess not found")
 
-    result = await db.execute(
-        select(College).filter(College.id == current_user.college_id)
-    )
-    college = result.scalar_one_or_none()
+    # result = await db.execute(
+    #     select(College).filter(College.id == current_user.college_id)
+    # )
+    # college = result.scalar_one_or_none()
 
-    allowed_domain = str(college.domain)
+    college_domain = current_user.email.rsplit("@",1)[1]
+    allowed_domain = str(college_domain)
 
     for student in payload:
 

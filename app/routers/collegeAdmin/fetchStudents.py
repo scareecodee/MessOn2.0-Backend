@@ -10,7 +10,7 @@ from app.security.dependencies.getCurrentRole import get_current_role
 from app.utils.userRole import UserRole
 from app.schemas.student.fetchStudentsSchema import StudentListResponse
 from app.schemas.student.studentFilter import StudentFilterParams
-from app.utils.cursorEncodeDecode import encode_cursor, decode_cursor
+from app.utils.studentPagninationCurosr import encode_student_cursor, decode_student_cursor
 
 router = APIRouter(
     prefix="/admin",
@@ -20,7 +20,7 @@ router = APIRouter(
 @router.get("/fetch-students/{mess_id}", response_model=StudentListResponse)
 async def get_students(
     mess_id: UUID,
-    current_admin: User = Depends(get_current_role(UserRole.college_admin)),
+    current_admin: User = Depends(get_current_role([UserRole.college_admin])),
     params: StudentFilterParams = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
@@ -71,7 +71,7 @@ async def get_students(
     )
 
     if params.cursor:
-        cursor_roll, cursor_created_at, cursor_id = decode_cursor(params.cursor)
+        cursor_roll, cursor_created_at, cursor_id = decode_student_cursor(params.cursor)
 
         query = query.where(
             tuple_(Student.roll_number, User.created_at, User.id)
@@ -90,7 +90,7 @@ async def get_students(
 
     if has_more:
         last_student = students[-1]
-        next_cursor = encode_cursor(
+        next_cursor = encode_student_cursor(
             last_student.roll_number,
             last_student.user.created_at,
             last_student.user.id

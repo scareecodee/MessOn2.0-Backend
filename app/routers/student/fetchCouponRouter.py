@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.db.session import get_db
 from app.services.couponQueryService import fetch_coupon_by_meal
 from app.models.user.userModel import User
@@ -34,6 +33,9 @@ async def get_coupon(
 
     if not student:
         raise HTTPException(404, "Student profile not found")
+    
+    print("calling fetch coupon by meal")
+    print(current_user.college_id)
 
     coupon = await fetch_coupon_by_meal(
         db=db,
@@ -42,6 +44,8 @@ async def get_coupon(
         college_id=current_user.college_id,
         meal_slot=meal_slot
     )
+
+
 
     if not coupon:
         raise HTTPException(404, "Coupon not available")

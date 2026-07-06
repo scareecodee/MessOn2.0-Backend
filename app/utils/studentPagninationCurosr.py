@@ -4,14 +4,15 @@ from uuid import UUID
 from fastapi import HTTPException
 from app.core.config import get_settings
 
+
+
 settings = get_settings()
 
 CURSOR_SECRET_KEY = settings.cursor_secret
 
 serializer = URLSafeSerializer(CURSOR_SECRET_KEY)
 
-
-def encode_cursor(roll_number: str, created_at: datetime, student_id: UUID) -> str:
+def encode_student_cursor(roll_number: str, created_at: datetime, student_id: UUID) -> str:
     payload = {
         "roll_number": roll_number,
         "created_at": created_at.isoformat(),
@@ -21,7 +22,7 @@ def encode_cursor(roll_number: str, created_at: datetime, student_id: UUID) -> s
     return serializer.dumps(payload)
 
 
-def decode_cursor(cursor: str):
+def decode_student_cursor(cursor: str):
     try:
         data = serializer.loads(cursor)
     except BadSignature:

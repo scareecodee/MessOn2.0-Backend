@@ -23,12 +23,11 @@ router = APIRouter(
 
 @router.get("/rating-analytics", response_model=list[RatingAnalyticsResponse])
 async def fetch_rating_stats(
-    mess_id:UUID | None = None,
     days: int = Query(1, ge=1, le=30),
     current_user: User = Depends(get_current_role([UserRole.mess_admin,UserRole.college_admin])),
     db: AsyncSession = Depends(get_db)
 ):
-
+    mess_id:UUID
     if current_user.role == UserRole.mess_admin:
         mess_admins = await db.execute(
             select(MessAdmin).where(
@@ -41,17 +40,19 @@ async def fetch_rating_stats(
 
         if not mess_admin:
             raise HTTPException(404, "Mess admin not found")
+        
+        mess_id = mess_admin.mess_id
 
-        return await get_rating_stats(
+        # return await get_rating_stats(
+        #     db=db,
+        #     mess_id=mess_admin.mess_id,
+        #     college_id=current_user.college_id,
+        #     days=days
+        # )
+    # else:
+    return await get_rating_stats(
             db=db,
             mess_id=mess_admin.mess_id,
-            college_id=current_user.college_id,
-            days=days
-        )
-    else:
-        return await get_rating_stats(
-            db=db,
-            mess_id=mess_id,
             college_id=current_user.college_id,
             days=days
         )

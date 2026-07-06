@@ -34,7 +34,7 @@ async def insert_rating(
         WHERE c.student_id = :student_id
         AND c.date = :date
         AND c.meal_slot = :meal_slot
-        AND c.scanned_at IS NOT NULL
+        AND c.scanned_at IS NULL
         LIMIT 1
 
         ON CONFLICT (student_id, date, meal_slot, meal_type)
@@ -58,6 +58,7 @@ async def insert_rating(
 
     if not row:
         return None
+    
 
     return {
         "rating_id": row.id,
@@ -125,7 +126,7 @@ async def update_summary_logic(
             updated_at = NOW()
     """)
 
-    await db.execute(stmt, {
+    result = await db.execute(stmt, {
         "mess_id": mess_id,
         "college_id": college_id,
         "date": date,

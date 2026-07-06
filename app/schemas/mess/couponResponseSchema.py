@@ -7,7 +7,7 @@ from uuid import UUID
 
 from app.utils.mealSlot import MealSlot
 from app.utils.mealType import MealType
-
+from app.utils.couponGenerationStatus import CouponGenerationStatus
 
 class CouponResponse(BaseModel):
     id: UUID
@@ -47,6 +47,13 @@ class ScanCouponResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class CouponGenerationResponse(BaseModel):
+    coupon_generation_status: CouponGenerationStatus
+    detail: str | None = None
+    generated_coupon_count: int | None = None
+
+    class Config:
+        from_attributes = True
 
 class ServiceException(HTTPException):
     def __init__(self, errors: list[ErrorDetail]):
@@ -60,3 +67,4 @@ class ServiceException(HTTPException):
 class CouponExpiryResponse(BaseModel):
     meal_slot: MealSlot
     is_expired: bool
+

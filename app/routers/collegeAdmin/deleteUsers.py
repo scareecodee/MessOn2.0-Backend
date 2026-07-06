@@ -1,12 +1,11 @@
 from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.models.student.studentModel import Student
-from app.services.deleteUsersService import delete_users
+from app.services.deleteUsersService import delete_users_service
 from app.models.user.userModel import User
 from app.security.dependencies.getCurrentRole import get_current_role
 from app.db.session import get_db
@@ -14,18 +13,18 @@ from app.schemas.student.deleteUsers import DeleteUsers
 from app.utils.userRole import UserRole
 
 router = APIRouter(
-    prefix="/delete",
-    tags=["College Admins Mess Deletion Operations"]
+    prefix="",
+    tags=["Delete Users"]
 )
 
-@router.delete("/users")
-async def delete_students(
+@router.delete("/delete/users")
+async def delete_users(
     payload: DeleteUsers,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_role([UserRole.college_admin]))
+    current_user: User = Depends(get_current_role([UserRole.college_admin,UserRole.mess_admin]))
 ):
     if payload.role==UserRole.student:
-        deleted_ids = await delete_users(payload,db,current_user)
+        deleted_ids = await delete_users_service(payload,db,current_user)
         if not deleted_ids:
             raise HTTPException(404, "Student not found")
         return {
@@ -33,7 +32,7 @@ async def delete_students(
         }
 
     if payload.role==UserRole.mess_admin:
-        deleted_ids = await delete_users(payload,db,current_user)
+        deleted_ids = await delete_users_service(payload,db,current_user)
         if not deleted_ids:
             raise HTTPException(404, "Mess Admin not found")
         return {
@@ -41,7 +40,7 @@ async def delete_students(
 
 
     else :
-        deleted_ids = await delete_users(payload, db, current_user)
+        deleted_ids = await delete_users_service(payload, db, current_user)
         if not deleted_ids:
             raise HTTPException(404, "College not found")
 

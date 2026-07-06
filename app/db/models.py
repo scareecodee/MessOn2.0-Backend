@@ -17,6 +17,9 @@ from app.models.mess.messClosureModel import MessClosure
 from app.models.college.MessPerDayPriceConfigModel import PerDayMealPrice
 from app.models.mess.ratingsModel import Rating
 from app.models.mess.ratingAnalyticsModel import RatingAnalytics
+from app.models.student.complaintModel import Complaints
+from app.models.student.complaintVoteModel import ComplaintVote
+
 
 
 

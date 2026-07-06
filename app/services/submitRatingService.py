@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from datetime import date as dt_date
-
+from fastapi import Response,status
 from app.services.insertAndUpdateRatingService import update_summary_logic, insert_rating
 
 
@@ -16,6 +16,7 @@ async def submit_rating(
         raise HTTPException(400, "You can only rate today's meal")
 
     # async with db.begin():
+    print("calling insert")
 
     result = await insert_rating(
         db,
@@ -30,7 +31,8 @@ async def submit_rating(
             400,
             "Rating not allowed or already submitted"
         )
-
+    
+    print("calling upsert")
     await update_summary_logic(
         db,
         mess_id=result["mess_id"],
@@ -41,7 +43,8 @@ async def submit_rating(
         rating=rating
     )
 
+    await db.commit()
 
-    return {
-        "message": "Rating submitted successfully"
-    }
+    return Response(
+        status_code=status.HTTP_201_CREATED
+    )
